@@ -6,10 +6,28 @@ import (
 	"net/http"
 )
 
-type StandaloneCanaryAnalysisInput map[string]interface{}
-type StandaloneCanaryAnalysisOutput map[string]interface{}
+type StandaloneCanaryAnalysisInput struct {
+	// Optional query parameters
+	User               string `json:"-"`
+	Application        string `json:"-"`
+	MetricsAccountName string `json:"-"`
+	StorageAccountName string `json:"-"`
 
-type GetStandaloneCanaryAnalysisOutput map[string]interface{}
+	// Request body
+	CanaryConfig     map[string]interface{} `json:"canaryConfig"`
+	ExecutionRequest map[string]interface{} `json:"executionRequest"`
+}
+type StandaloneCanaryAnalysisOutput struct {
+	CanaryAnalysisExecutionID string `json:"canaryAnalysisExecutionId"`
+}
+
+type GetStandaloneCanaryAnalysisOutput struct {
+	Status          string `json:"status"`
+	ExecutionStatus string `json:"executionStatus"`
+	PipelineID      string `json:"pipelineId"`
+
+	// TODO - there are more things we want here
+}
 
 type Client interface {
 	StartStandaloneCanaryAnalysis(input StandaloneCanaryAnalysisInput) (StandaloneCanaryAnalysisOutput, error)
@@ -26,7 +44,7 @@ func DefaultHTTPClientFactory() *http.Client {
 }
 
 type DefaultClient struct {
-	BaseURL string
+	BaseURL       string
 	ClientFactory HTTPClientFactory
 }
 
@@ -67,7 +85,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 
 func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCanaryAnalysisOutput, error) {
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint("/standalone_canary_analysis/" + id), nil)
+		http.MethodPost, d.getEndpoint("/standalone_canary_analysis/"+id), nil)
 
 	if err != nil {
 		return GetStandaloneCanaryAnalysisOutput{}, err
