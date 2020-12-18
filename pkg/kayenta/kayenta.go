@@ -15,8 +15,26 @@ type StandaloneCanaryAnalysisInput struct {
 
 	// Request body
 	CanaryConfig     map[string]interface{} `json:"canaryConfig"`
-	ExecutionRequest map[string]interface{} `json:"executionRequest"`
+	ExecutionRequest ExecutionRequest       `json:"executionRequest"`
 }
+
+type ExecutionRequest struct {
+	Scopes               []Scope `json:"scopes"`
+	LifetimeDurationMins int     `json:"lifetimeDurationMins"`
+	BeginAfterMins       int     `json:"beginAfterMins"`
+}
+
+type Scope struct {
+	ScopeName          string `json:"scopeName"`
+	ControlScope       string `json:"controlScope"`
+	ControlLocation    string `json:"controlLocation"`
+	ExperimentScope    string `json:"experimentScope"`
+	ExperimentLocation string `json:"experimentLocation"`
+	Step               int    `json:"step"`
+
+	// TODO - omitted some propoerties, add if required
+}
+
 type StandaloneCanaryAnalysisOutput struct {
 	CanaryAnalysisExecutionID string `json:"canaryAnalysisExecutionId"`
 }
@@ -48,16 +66,34 @@ type DefaultClient struct {
 	ClientFactory HTTPClientFactory
 }
 
-func NewDefaultClient() *DefaultClient {
-	return &DefaultClient{
-		// TODO: replace with actual kayenta port
-		BaseURL:       "http://localhost:9999",
-		ClientFactory: DefaultHTTPClientFactory,
+func ClientBaseURL(baseURL string) func(dc *DefaultClient) {
+	return func(dc *DefaultClient) {
+		dc.BaseURL = baseURL
 	}
 }
 
-func (d *DefaultClient) getEndpoint(endpoint string) string {
-	return ""
+func ClientHTTPClientFactory(factory HTTPClientFactory) func(dc *DefaultClient) {
+	return func(dc *DefaultClient) {
+		dc.ClientFactory = factory
+	}
+}
+
+func NewDefaultClient(opts ...func(dc *DefaultClient)) *DefaultClient {
+	c := &DefaultClient{
+		// TODO: replace with actual kayenta port
+		BaseURL:       "http://localhost:8090",
+		ClientFactory: DefaultHTTPClientFactory,
+	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
+}
+
+func (d *DefaultClient) getEndpoint(endpoint string, params map[string]string) string {
+	return d.BaseURL + endpoint
 }
 
 func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnalysisInput) (StandaloneCanaryAnalysisOutput, error) {
@@ -66,7 +102,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 		return StandaloneCanaryAnalysisOutput{}, err
 	}
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint("/standalone_canary_analysis"), bytes.NewReader(b))
+		http.MethodPost, d.getEndpoint("/standalone_canary_analysis", nil), bytes.NewReader(b))
 
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, err
@@ -85,7 +121,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 
 func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCanaryAnalysisOutput, error) {
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint("/standalone_canary_analysis/"+id), nil)
+		http.MethodPost, d.getEndpoint("/standalone_canary_analysis/"+id, nil), nil)
 
 	if err != nil {
 		return GetStandaloneCanaryAnalysisOutput{}, err

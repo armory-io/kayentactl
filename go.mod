@@ -1,4 +1,4 @@
-module github.com/armory-io/kayenta-jenkins-plugin
+module github.com/armory-io/kayenta-ctl
 
 go 1.14
 
