@@ -170,7 +170,7 @@ func (d *DefaultClient) CreateCanaryConfig(config io.Reader) (string, error) {
 }
 
 //GetCanaryConfigs gets a list of canary configs from the Kayenta server
-func (d *DefaultClient) GetCanaryConfigs() ([]CanaryConfig, error) {
+func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, error) {
 	req, err := http.NewRequest(
 		http.MethodGet, d.getEndpoint(canaryConfigEndpoint, nil), nil)
 	if err != nil {
