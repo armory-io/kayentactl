@@ -14,7 +14,7 @@ func SkipIntegration(t *testing.T) {
 }
 
 func TestGetCanaryConfigs(t *testing.T) {
-	//SkipIntegration(t)
+	SkipIntegration(t)
 	c := NewDefaultClient(ClientBaseURL("http://localhost:8090"))
 	cc, err := c.GetCanaryConfigs()
 	assert.Nil(t, err)
