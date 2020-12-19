@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -111,15 +110,11 @@ func generateAnalysisRequest(control, experiment, configLocation string) (kayent
 		if err != nil {
 			return emptyResp, err
 		}
-		var c map[string]interface{}
+		var c kayenta.CanaryConfig
 		if err := json.NewDecoder(bytes.NewReader(b)).Decode(&c); err != nil {
 			return emptyResp, fmt.Errorf("failed to parse canary config: %w", err)
 		}
 		config = c
-	}
-
-	if config == nil {
-		return emptyResp, errors.New("canary config missing one must be supplied to continue")
 	}
 
 	return kayenta.StandaloneCanaryAnalysisInput{
@@ -137,6 +132,6 @@ func generateAnalysisRequest(control, experiment, configLocation string) (kayent
 }
 
 // stub method for supplying a default canary config
-func defaultCanaryConfig() map[string]interface{} {
-	return nil
+func defaultCanaryConfig() kayenta.CanaryConfig {
+	return kayenta.CanaryConfig{}
 }

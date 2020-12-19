@@ -3,8 +3,21 @@ package kayenta
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 )
+
+const (
+	canaryConfigEndpoint = "/canaryConfig"
+)
+
+type CanaryConfig struct {
+	Id               string                   `json:"id"`
+	Applications     []string                 `json:"canaryConfig"`
+	ConfigVersion    string                   `json:"configVersion"`
+	CreatedTimestamp int                      `json:"createdTimestamp"`
+	Metrics          []map[string]interface{} `json:"metrics"`
+}
 
 type StandaloneCanaryAnalysisInput struct {
 	// Optional query parameters
@@ -14,8 +27,8 @@ type StandaloneCanaryAnalysisInput struct {
 	StorageAccountName string `json:"-"`
 
 	// Request body
-	CanaryConfig     map[string]interface{} `json:"canaryConfig"`
-	ExecutionRequest ExecutionRequest       `json:"executionRequest"`
+	CanaryConfig     CanaryConfig     `json:"canaryConfig"`
+	ExecutionRequest ExecutionRequest `json:"executionRequest"`
 }
 
 type ExecutionRequest struct {
@@ -136,6 +149,43 @@ func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCan
 	}
 
 	return output, nil
+}
+
+//CreateCanaryConfig writes a canary config to object storage
+func (d *DefaultClient) CreateCanaryConfig(config io.Reader) (string, error) {
+	req, err := http.NewRequest(
+		http.MethodPost, d.getEndpoint(canaryConfigEndpoint, nil), config)
+	if err != nil {
+		return "", err
+	}
+	resp, err := d.ClientFactory().Do(req)
+	if err != nil {
+		return "", err
+	}
+	var id string
+	if err := deserializeResponse(resp, &id); err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+//GetCanaryConfigs gets a list of canary configs from the Kayenta server
+func (d *DefaultClient) GetCanaryConfigs() ([]CanaryConfig, error) {
+	req, err := http.NewRequest(
+		http.MethodGet, d.getEndpoint(canaryConfigEndpoint, nil), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := d.ClientFactory().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	var output []CanaryConfig
+	if err := deserializeResponse(resp, &output); err != nil {
+		return nil, err
+	}
+	return output, nil
+
 }
 
 func deserializeResponse(resp *http.Response, target interface{}) error {
