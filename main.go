@@ -7,18 +7,26 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/armory-io/kayenta-ctl/pkg/kayenta"
 )
 
+const (
+	//TODO: This is being hosted in Isaac's personal github account, we'll need to move this somewhere better.
+	defaultCanaryConfig string = "https://gist.githubusercontent.com/imosquera/399a89ad65e4f625fc2e0f0822dc5911/raw/canary_config.json"
+)
+
 func main() {
 	var (
-		configLocation, control, experiment, kayentaURL string
-		checkInterval, timeout                          time.Duration
+		appName, configLocation, control, experiment, kayentaURL string
+		checkInterval, timeout                                   time.Duration
 	)
-	flag.StringVar(&configLocation, "canary-config", "", "location of the canary config to use")
+	flag.StringVar(&configLocation, "canary-config", defaultCanaryConfig, "location of the canary config to use")
+	flag.StringVar(&appName, "application", "", "name of the application to use")
 	flag.StringVar(&control, "control", "", "application to use as the experiment control (i.e. baseline)")
 	flag.StringVar(&experiment, "experiment", "", "application to use as the experiment  (i.e. canary)")
 	flag.StringVar(&kayentaURL, "url", "http://localhost:8090", "URL for kayenta service")
@@ -27,8 +35,21 @@ func main() {
 	flag.DurationVar(&timeout, "timeout", 1*time.Hour, "timeout")
 	flag.Parse()
 
+	resp, err := http.Get(configLocation)
+	if err != nil {
+		log.Fatal("Could not get default canary config json at locations: " + configLocation)
+	}
+
 	kayentaClient := kayenta.NewDefaultClient(
 		kayenta.ClientBaseURL(kayentaURL))
+
+	log.Println("updating canary configs")
+	_, err = kayenta.UpsertCanaryConfigs(kayentaClient, appName, resp.Body)
+	if err != nil {
+		log.Println(err)
+		log.Fatalf("could not update canary config, exiting")
+	}
+	log.Println("successfully upserted config")
 
 	//TODO - build canary request based on user inputs
 	input, err := generateAnalysisRequest(control, experiment, configLocation)
@@ -102,7 +123,7 @@ func generateAnalysisRequest(control, experiment, configLocation string) (kayent
 	emptyResp := kayenta.StandaloneCanaryAnalysisInput{}
 
 	// decide which canary configuration to use
-	config := defaultCanaryConfig()
+	config := kayenta.CanaryConfig{}
 	if configLocation != "" {
 		// read in local canary configuration is the user supplied one
 		log.Printf("using canary config located at %s", configLocation)
@@ -116,7 +137,6 @@ func generateAnalysisRequest(control, experiment, configLocation string) (kayent
 		}
 		config = c
 	}
-
 	return kayenta.StandaloneCanaryAnalysisInput{
 		CanaryConfig: config,
 		ExecutionRequest: kayenta.ExecutionRequest{
@@ -129,9 +149,4 @@ func generateAnalysisRequest(control, experiment, configLocation string) (kayent
 			BeginAfterMins:       5,
 		},
 	}, nil
-}
-
-// stub method for supplying a default canary config
-func defaultCanaryConfig() kayenta.CanaryConfig {
-	return kayenta.CanaryConfig{}
 }

@@ -3,8 +3,11 @@ package kayenta
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -58,6 +61,16 @@ type GetStandaloneCanaryAnalysisOutput struct {
 	PipelineID      string `json:"pipelineId"`
 
 	// TODO - there are more things we want here
+}
+
+//ServerError is returned whenever there is a problem
+type ServerError struct {
+	Message string `json:"message"`
+	Code    int
+}
+
+func (e ServerError) Error() string {
+	return fmt.Sprintf("%d : %v", e.Code, e.Message)
 }
 
 type Client interface {
@@ -151,6 +164,28 @@ func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCan
 	return output, nil
 }
 
+//UpdateCanaryConfig updates an existing config
+func (d *DefaultClient) UpdateCanaryConfig(configID string, config io.Reader) (string, error) {
+	req, err := http.NewRequest(
+		http.MethodPut, d.getEndpoint(canaryConfigEndpoint+"/"+configID, nil), config)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := d.ClientFactory().Do(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", deserializeErrorResponse(resp)
+	}
+	var result map[string]string
+	if err := deserializeResponse(resp, &result); err != nil {
+		return "", err
+	}
+	return result["canaryConfigId"], nil
+}
+
 //CreateCanaryConfig writes a canary config to object storage
 func (d *DefaultClient) CreateCanaryConfig(config io.Reader) (string, error) {
 	req, err := http.NewRequest(
@@ -162,15 +197,16 @@ func (d *DefaultClient) CreateCanaryConfig(config io.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var id string
-	if err := deserializeResponse(resp, &id); err != nil {
+	var result map[string]string
+	if err := deserializeResponse(resp, &result); err != nil {
 		return "", err
 	}
-	return "", nil
+	return result["canaryConfigId"], nil
 }
 
 //GetCanaryConfigs gets a list of canary configs from the Kayenta server
 func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, error) {
+	log.Info("Getting Canary Configs")
 	req, err := http.NewRequest(
 		http.MethodGet, d.getEndpoint(canaryConfigEndpoint, nil), nil)
 	if err != nil {
@@ -184,10 +220,21 @@ func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, er
 	if err := deserializeResponse(resp, &output); err != nil {
 		return nil, err
 	}
+	log.Infof("Found %d canary configs", len(output))
 	return output, nil
 
 }
 
+func deserializeErrorResponse(resp *http.Response) error {
+	defer resp.Body.Close()
+	var e ServerError
+	err := json.NewDecoder(resp.Body).Decode(&e)
+	if err != nil {
+		return err
+	}
+	e.Code = resp.StatusCode
+	return e
+}
 func deserializeResponse(resp *http.Response, target interface{}) error {
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(target)
