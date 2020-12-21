@@ -11,16 +11,9 @@ import (
 )
 
 const (
-	canaryConfigEndpoint = "/canaryConfig"
+	canaryConfigEndpoint             = "/canaryConfig"
+	standaloneCanaryAnalysisEndpoint = "/standalone_canary_analysis"
 )
-
-type CanaryConfig struct {
-	Id               string                   `json:"id"`
-	Applications     []string                 `json:"canaryConfig"`
-	ConfigVersion    string                   `json:"configVersion"`
-	CreatedTimestamp int                      `json:"createdTimestamp"`
-	Metrics          []map[string]interface{} `json:"metrics"`
-}
 
 type StandaloneCanaryAnalysisInput struct {
 	// Optional query parameters
@@ -34,19 +27,59 @@ type StandaloneCanaryAnalysisInput struct {
 	ExecutionRequest ExecutionRequest `json:"executionRequest"`
 }
 
+type CanaryConfig struct {
+	Name             string           `json:"name"`
+	Id               string           `json:"id"`
+	Applications     []string         `json:"canaryConfig"`
+	ConfigVersion    string           `json:"configVersion"`
+	CreatedTimestamp int              `json:"createdTimestamp"`
+	Judge            JudgeConfig      `json:"judge"`
+	Metrics          []Metric         `json:"metrics"`
+	Classifier       CanaryClassifier `json:"classifier"`
+}
+
+type JudgeConfig struct {
+	Name string `json:"name"`
+}
+
+type Metric struct {
+	Groups    []string `json:"groups"`
+	Name      string   `json:"name"`
+	Query     map[string]string
+	ScopeName string `json:"scopeName"`
+}
+
+type CanaryClassifier struct {
+	GroupWeights map[string]string `json:"groupWeights"`
+}
+
 type ExecutionRequest struct {
 	Scopes               []Scope `json:"scopes"`
 	LifetimeDurationMins int     `json:"lifetimeDurationMins"`
 	BeginAfterMins       int     `json:"beginAfterMins"`
+	AnalysisIntervalMins int     `json:"analysisIntervalMins"`
+
+	Thresholds Threshold `json:"thresholds"`
+}
+
+type Threshold struct {
+	Marginal string `json:"marginal"`
+	Pass     string `json:"pass"`
 }
 
 type Scope struct {
-	ScopeName          string `json:"scopeName"`
-	ControlScope       string `json:"controlScope"`
-	ControlLocation    string `json:"controlLocation"`
-	ExperimentScope    string `json:"experimentScope"`
-	ExperimentLocation string `json:"experimentLocation"`
-	Step               int    `json:"step"`
+	ScopeName           string `json:"scopeName"`
+	ControlScope        string `json:"controlScope"`
+	ControlLocation     string `json:"controlLocation"`
+	ControlOffsetInMins string `json:"controlOffsetInMins"`
+	ExperimentScope     string `json:"experimentScope"`
+	ExperimentLocation  string `json:"experimentLocation"`
+	Step                int    `json:"step"`
+
+	StartTimeIso string `json:"startTimeIso"`
+	EndTimeIso   string `json:"endTimeIso"`
+
+	ExtendedScopeParams map[string]string `json:"extendedScopeParams"`
 
 	// TODO - omitted some propoerties, add if required
 }
@@ -73,9 +106,19 @@ func (e ServerError) Error() string {
 	return fmt.Sprintf("%d : %v", e.Code, e.Message)
 }
 
-type Client interface {
+type CanaryConfigAPI interface {
+	UpdateCanaryConfig(cc CanaryConfig) (string, error)
+	CreateCanaryConfig(cc CanaryConfig) (string, error)
+	GetCanaryConfigs(application string) ([]CanaryConfig, error)
+}
+type StandaloneCanaryAnalysisAPI interface {
 	StartStandaloneCanaryAnalysis(input StandaloneCanaryAnalysisInput) (StandaloneCanaryAnalysisOutput, error)
 	GetStandaloneCanaryAnalysis(id string) (GetStandaloneCanaryAnalysisOutput, error)
+}
+
+type Client interface {
+	StandaloneCanaryAnalysisAPI
+	CanaryConfigAPI
 }
 
 // HTTPClientFactory returns an http.Client that
@@ -129,7 +172,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(er ExecutionRequest) (Stan
 		return StandaloneCanaryAnalysisOutput{}, err
 	}
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint("/standalone_canary_analysis", nil), bytes.NewReader(b))
+		http.MethodPost, d.getEndpoint(standaloneCanaryAnalysisEndpoint, nil), bytes.NewReader(b))
 
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, err
@@ -148,7 +191,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(er ExecutionRequest) (Stan
 
 func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCanaryAnalysisOutput, error) {
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint("/standalone_canary_analysis/"+id, nil), nil)
+		http.MethodPost, d.getEndpoint(standaloneCanaryAnalysisEndpoint+"/"+id, nil), nil)
 
 	if err != nil {
 		return GetStandaloneCanaryAnalysisOutput{}, err
@@ -242,10 +285,8 @@ func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, er
 }
 
 func deserializeErrorResponse(resp *http.Response) error {
-	defer resp.Body.Close()
 	var e ServerError
-	err := json.NewDecoder(resp.Body).Decode(&e)
-	if err != nil {
+	if err := deserializeResponse(resp, &e); err != nil {
 		return err
 	}
 	e.Code = resp.StatusCode
