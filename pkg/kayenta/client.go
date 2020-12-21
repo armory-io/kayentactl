@@ -45,14 +45,14 @@ type JudgeConfig struct {
 }
 
 type Metric struct {
-	Groups    []string `json:"groups"`
-	Name      string   `json:"name"`
-	Query     map[string]string
-	ScopeName string `json:"scopeName"`
+	Groups    []string          `json:"groups"`
+	Name      string            `json:"name"`
+	Query     map[string]string `json:"query"`
+	ScopeName string            `json:"scopeName"`
 }
 
 type CanaryClassifier struct {
-	GroupWeights map[string]string `json:"groupWeights"`
+	GroupWeights map[string]int `json:"groupWeights"`
 }
 
 type ExecutionRequest struct {
