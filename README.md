@@ -11,6 +11,8 @@ $ kayentactl --experiment mydeploy-v1 --control myolddeploy-v1
 - [x] configure datadog
 - [x] deploy that through argo
 - [] create and deploy that generates traffic
+- [] create new repo for kubernetes infrastructure
+- [] create automation to replace docker tag in deployment object
 - [] push kayentactl container to the cloud on CI! (registry)
 - [] get canary config to use what we want it to use for the app above.
 - [] how do we want to communicate failure through the CLI? 
