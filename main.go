@@ -33,11 +33,13 @@ func main() {
 	flag.DurationVar(&timeout, "timeout", 1*time.Hour, "timeout")
 	flag.Parse()
 
+	log.Printf("fetching canary config from %s", configLocation)
 	resp, err := http.Get(configLocation)
 	if err != nil {
-		log.Fatal("Could not get default canary config json at locations: " + configLocation)
+		log.Fatalf("Could not get default canary config json at locations: %s", configLocation)
 	}
 	defer resp.Body.Close()
+	log.Println("canary config fetched successfully")
 
 	var er kayenta.ExecutionRequest
 	err = json.NewDecoder(resp.Body).Decode(&er)

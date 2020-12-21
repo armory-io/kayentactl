@@ -32,7 +32,7 @@ func WaitForComplete(ctx context.Context, executionID string, client *DefaultCli
 					return
 				}
 
-				log.Printf("execution is still running with status %s", res.Status)
+				log.Printf("execution is still running with status %s\n", res.Status)
 			}
 		}
 	}()
