@@ -6,3 +6,9 @@
 ```shell
 $ kayentactl --experiment mydeploy-v1 --control myolddeploy-v1
 ```
+
+- [] make an app that takes traffic and shows a difference
+- [] deploy that through argo
+- [] docker container for kayentactl
+- [] jenkins plugin
+
