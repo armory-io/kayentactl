@@ -1,4 +1,4 @@
-module github.com/armory-io/kayenta-ctl
+module github.com/armory-io/kayentactl
 
 go 1.14
 

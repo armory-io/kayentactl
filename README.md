@@ -4,5 +4,5 @@
 
 ### Simple usage with default canary configuration
 ```shell
-$ kayenta-ctl --experiment mydeploy-v1 --control myolddeploy-v1
+$ kayentactl --experiment mydeploy-v1 --control myolddeploy-v1
 ```

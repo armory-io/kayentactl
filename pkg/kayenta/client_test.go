@@ -1,8 +1,8 @@
 package kayenta
 
 import (
+	"encoding/json"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,17 +15,21 @@ func SkipIntegration(t *testing.T) {
 }
 
 func TestUpdateCanaryConfigs(t *testing.T) {
-	//SkipIntegration(t)
+	SkipIntegration(t)
 	c := NewDefaultClient(ClientBaseURL("http://localhost:8090"))
-	cc, err := c.UpdateCanaryConfig("1234", strings.NewReader(testConfig))
+
+	var cc CanaryConfig
+	json.Unmarshal([]byte(testConfig), &cc)
+
+	id, err := c.UpdateCanaryConfig(cc)
 	assert.Nil(t, err)
-	assert.NotEqual(t, cc, "")
+	assert.NotEqual(t, id, "")
 }
 
 func TestGetCanaryConfigs(t *testing.T) {
-	SkipIntegration(t)
+	//SkipIntegration(t)
 	c := NewDefaultClient(ClientBaseURL("http://localhost:8090"))
-	cc, err := c.GetCanaryConfigs("someapps")
+	cc, err := c.GetCanaryConfigs("somename")
 	assert.Nil(t, err)
 	assert.NotNil(t, cc)
 	assert.True(t, len(cc) > 0)

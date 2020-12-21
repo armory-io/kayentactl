@@ -3,8 +3,8 @@ package kayenta
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -122,8 +122,9 @@ func (d *DefaultClient) getEndpoint(endpoint string, params map[string]string) s
 	return d.BaseURL + endpoint
 }
 
-func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnalysisInput) (StandaloneCanaryAnalysisOutput, error) {
-	b, err := json.Marshal(input)
+//StartStandaloneCanaryAnalysis - starts a canary analysis
+func (d *DefaultClient) StartStandaloneCanaryAnalysis(er ExecutionRequest) (StandaloneCanaryAnalysisOutput, error) {
+	b, err := json.Marshal(er)
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, err
 	}
@@ -165,9 +166,18 @@ func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCan
 }
 
 //UpdateCanaryConfig updates an existing config
-func (d *DefaultClient) UpdateCanaryConfig(configID string, config io.Reader) (string, error) {
+func (d *DefaultClient) UpdateCanaryConfig(cc CanaryConfig) (string, error) {
+	if cc.Id == "" {
+		return "", errors.New("Canary Config ID cannot be empty value")
+	}
+	ccBytes, err := json.Marshal(cc)
+	if err != nil {
+		log.Error("Could not marshal canary config when creating canary config")
+		return "", err
+	}
+
 	req, err := http.NewRequest(
-		http.MethodPut, d.getEndpoint(canaryConfigEndpoint+"/"+configID, nil), config)
+		http.MethodPut, d.getEndpoint(canaryConfigEndpoint+"/"+cc.Id, nil), bytes.NewReader(ccBytes))
 	if err != nil {
 		return "", err
 	}
@@ -187,9 +197,14 @@ func (d *DefaultClient) UpdateCanaryConfig(configID string, config io.Reader) (s
 }
 
 //CreateCanaryConfig writes a canary config to object storage
-func (d *DefaultClient) CreateCanaryConfig(config io.Reader) (string, error) {
+func (d *DefaultClient) CreateCanaryConfig(cc CanaryConfig) (string, error) {
+	ccBytes, err := json.Marshal(cc)
+	if err != nil {
+		log.Error("Could not marshal canary config when creating canary config")
+		return "", err
+	}
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint(canaryConfigEndpoint, nil), config)
+		http.MethodPost, d.getEndpoint(canaryConfigEndpoint, nil), bytes.NewReader(ccBytes))
 	if err != nil {
 		return "", err
 	}
@@ -206,6 +221,7 @@ func (d *DefaultClient) CreateCanaryConfig(config io.Reader) (string, error) {
 
 //GetCanaryConfigs gets a list of canary configs from the Kayenta server
 func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, error) {
+
 	log.Info("Getting Canary Configs")
 	req, err := http.NewRequest(
 		http.MethodGet, d.getEndpoint(canaryConfigEndpoint, nil), nil)
