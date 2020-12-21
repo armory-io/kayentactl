@@ -37,8 +37,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Could not get default canary config json at locations: " + configLocation)
 	}
-
 	defer resp.Body.Close()
+
 	var er kayenta.ExecutionRequest
 	err = json.NewDecoder(resp.Body).Decode(&er)
 	if err != nil {
@@ -50,7 +50,7 @@ func main() {
 
 	// start standalone canary
 	log.Info("starting canary analysis")
-	output, err := kc.StartStandaloneCanaryAnalysis(er)
+	output, err := kc.StartStandaloneCanaryAnalysis(kayenta.StandaloneCanaryAnalysisInput{ExecutionRequest: er})
 	if err != nil {
 		log.Fatalf("error starting canary analysis: %s", err.Error())
 	}

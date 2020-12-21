@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -162,17 +163,33 @@ func NewDefaultClient(opts ...func(dc *DefaultClient)) *DefaultClient {
 }
 
 func (d *DefaultClient) getEndpoint(endpoint string, params map[string]string) string {
-	return d.BaseURL + endpoint
+	u := d.BaseURL + endpoint
+	// TODO - handle error, who cares for now
+	parsed, _ := url.Parse(u)
+	q := parsed.Query()
+	for k, v := range params {
+		if v != "" {
+			q.Set(k, v)
+		}
+	}
+	parsed.RawQuery = q.Encode()
+	return parsed.String()
 }
 
 //StartStandaloneCanaryAnalysis - starts a canary analysis
-func (d *DefaultClient) StartStandaloneCanaryAnalysis(er ExecutionRequest) (StandaloneCanaryAnalysisOutput, error) {
-	b, err := json.Marshal(er)
+func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnalysisInput) (StandaloneCanaryAnalysisOutput, error) {
+	b, err := json.Marshal(input)
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, err
 	}
+	startQueryParams := map[string]string{
+		"storageAccountName": input.StorageAccountName,
+		"metricsAccountName": input.MetricsAccountName,
+		// TODO - there are still some params missing from this
+	}
+
 	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint(standaloneCanaryAnalysisEndpoint, nil), bytes.NewReader(b))
+		http.MethodPost, d.getEndpoint(standaloneCanaryAnalysisEndpoint, startQueryParams), bytes.NewReader(b))
 
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, err
