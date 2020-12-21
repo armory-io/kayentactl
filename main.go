@@ -41,8 +41,8 @@ func main() {
 	defer resp.Body.Close()
 	log.Println("canary config fetched successfully")
 
-	var er kayenta.ExecutionRequest
-	err = json.NewDecoder(resp.Body).Decode(&er)
+	var input kayenta.StandaloneCanaryAnalysisInput
+	err = json.NewDecoder(resp.Body).Decode(&input)
 	if err != nil {
 		log.Error(err)
 		log.Fatal("could not decode canary config JSON, exiting")
@@ -52,7 +52,7 @@ func main() {
 
 	// start standalone canary
 	log.Info("starting canary analysis")
-	output, err := kc.StartStandaloneCanaryAnalysis(kayenta.StandaloneCanaryAnalysisInput{ExecutionRequest: er})
+	output, err := kc.StartStandaloneCanaryAnalysis(input)
 	if err != nil {
 		log.Fatalf("error starting canary analysis: %s", err.Error())
 	}
