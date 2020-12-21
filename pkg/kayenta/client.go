@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -104,7 +105,11 @@ type ServerError struct {
 }
 
 func (e ServerError) Error() string {
-	return fmt.Sprintf("%d : %v", e.Code, e.Message)
+	msg := e.Message
+	if e.Message == "" {
+		msg = "no message included in response from server"
+	}
+	return fmt.Sprintf("%d : %v", e.Code, msg)
 }
 
 type CanaryConfigAPI interface {
@@ -176,11 +181,21 @@ func (d *DefaultClient) getEndpoint(endpoint string, params map[string]string) s
 	return parsed.String()
 }
 
+func requestFactory(method, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return req, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	return req, err
+
+}
+
 //StartStandaloneCanaryAnalysis - starts a canary analysis
 func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnalysisInput) (StandaloneCanaryAnalysisOutput, error) {
 	b, err := json.Marshal(input)
 	if err != nil {
-		return StandaloneCanaryAnalysisOutput{}, err
+		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("failed to marshal request input: %w", err)
 	}
 	startQueryParams := map[string]string{
 		"storageAccountName": input.StorageAccountName,
@@ -188,27 +203,31 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 		// TODO - there are still some params missing from this
 	}
 
-	req, err := http.NewRequest(
+	req, err := requestFactory(
 		http.MethodPost, d.getEndpoint(standaloneCanaryAnalysisEndpoint, startQueryParams), bytes.NewReader(b))
 
 	if err != nil {
-		return StandaloneCanaryAnalysisOutput{}, err
+		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("failed to create request: %w", err)
 	}
 	resp, err := d.ClientFactory().Do(req)
 	if err != nil {
-		return StandaloneCanaryAnalysisOutput{}, err
+		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("failed to execute request: %w", err)
 	}
+	if resp.StatusCode >= 400 {
+		return StandaloneCanaryAnalysisOutput{}, deserializeErrorResponse(resp)
+	}
+
 	var output StandaloneCanaryAnalysisOutput
 	if err := deserializeResponse(resp, &output); err != nil {
-		return StandaloneCanaryAnalysisOutput{}, err
+		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("error deserializing response: %w", err)
 	}
 
 	return output, nil
 }
 
 func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCanaryAnalysisOutput, error) {
-	req, err := http.NewRequest(
-		http.MethodPost, d.getEndpoint(standaloneCanaryAnalysisEndpoint+"/"+id, nil), nil)
+	req, err := requestFactory(
+		http.MethodGet, d.getEndpoint(standaloneCanaryAnalysisEndpoint+"/"+id, nil), nil)
 
 	if err != nil {
 		return GetStandaloneCanaryAnalysisOutput{}, err
@@ -217,6 +236,10 @@ func (d *DefaultClient) GetStandaloneCanaryAnalysis(id string) (GetStandaloneCan
 	if err != nil {
 		return GetStandaloneCanaryAnalysisOutput{}, err
 	}
+	if resp.StatusCode >= 400 {
+		return GetStandaloneCanaryAnalysisOutput{}, deserializeErrorResponse(resp)
+	}
+
 	var output GetStandaloneCanaryAnalysisOutput
 	if err := deserializeResponse(resp, &output); err != nil {
 		return GetStandaloneCanaryAnalysisOutput{}, err
@@ -236,12 +259,11 @@ func (d *DefaultClient) UpdateCanaryConfig(cc CanaryConfig) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest(
+	req, err := requestFactory(
 		http.MethodPut, d.getEndpoint(canaryConfigEndpoint+"/"+cc.Id, nil), bytes.NewReader(ccBytes))
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
 	resp, err := d.ClientFactory().Do(req)
 	if err != nil {
 		return "", err
@@ -263,7 +285,7 @@ func (d *DefaultClient) CreateCanaryConfig(cc CanaryConfig) (string, error) {
 		log.Error("Could not marshal canary config when creating canary config")
 		return "", err
 	}
-	req, err := http.NewRequest(
+	req, err := requestFactory(
 		http.MethodPost, d.getEndpoint(canaryConfigEndpoint, nil), bytes.NewReader(ccBytes))
 	if err != nil {
 		return "", err
@@ -311,5 +333,8 @@ func deserializeErrorResponse(resp *http.Response) error {
 }
 func deserializeResponse(resp *http.Response, target interface{}) error {
 	defer resp.Body.Close()
+	if resp.Body == http.NoBody {
+		return nil
+	}
 	return json.NewDecoder(resp.Body).Decode(target)
 }
