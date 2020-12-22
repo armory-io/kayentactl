@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/armory-io/kayentactl/pkg/kayenta"
@@ -87,6 +88,20 @@ var startCmd = &cobra.Command{
 		}
 		// generate some kind of report
 		log.Info("canary analysis complete.")
+		log.Info("getting analysis result")
+		result, err := kc.GetStandaloneCanaryAnalysis(analysisID)
+		if err != nil {
+			log.Fatalf("failed to get analysis result: %s", err.Error())
+		}
+
+		exitCode := 0
+		msg := "analysis was successful"
+		if !result.IsSuccessful() {
+			msg = fmt.Sprintf("analysis failed. result: %s", result.Status)
+			exitCode = 1
+		}
+		log.Println(msg)
+		os.Exit(exitCode)
 	},
 }
 

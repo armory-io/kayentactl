@@ -39,7 +39,7 @@ func WaitForComplete(ctx context.Context, executionID string, client *DefaultCli
 					done <- true
 					return
 				}
-				if isComplete(res) {
+				if res.Complete {
 					log.Printf("execution is complete with status %s\n", res.Status)
 					done <- true
 					return
@@ -51,13 +51,4 @@ func WaitForComplete(ctx context.Context, executionID string, client *DefaultCli
 	}()
 	<-done
 	return err1
-}
-
-func isComplete(status GetStandaloneCanaryAnalysisOutput) bool {
-	for _, s := range []string{"canceled", "stopped", "succeeded", "failed_continue", "terminal"} {
-		if status.Status == s {
-			return true
-		}
-	}
-	return false
 }

@@ -95,8 +95,13 @@ type GetStandaloneCanaryAnalysisOutput struct {
 	Status          string `json:"status"`
 	ExecutionStatus string `json:"executionStatus"`
 	PipelineID      string `json:"pipelineId"`
+	Complete        bool   `json:"complete"`
 
 	// TODO - there are more things we want here
+}
+
+func (g GetStandaloneCanaryAnalysisOutput) IsSuccessful() bool {
+	return g.Status == "succeeded"
 }
 
 //ServerError is returned whenever there is a problem
