@@ -17,6 +17,7 @@ const (
 	standaloneCanaryAnalysisEndpoint = "/standalone_canary_analysis"
 )
 
+//StandaloneCanaryAnalysisInput is used to create an api request to kayenta for a standalone analysis
 type StandaloneCanaryAnalysisInput struct {
 	// Optional query parameters
 	User               string `json:"-"`
@@ -197,6 +198,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("failed to marshal request input: %w", err)
 	}
+	log.Debugf("Using following JSON for Canary Analysis: %s", b)
 	startQueryParams := map[string]string{
 		"storageAccountName": input.StorageAccountName,
 		"metricsAccountName": input.MetricsAccountName,

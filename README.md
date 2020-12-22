@@ -4,18 +4,19 @@
 
 ### Simple usage with default canary configuration
 ```shell
-$ kayentactl --experiment mydeploy-v1 --control myolddeploy-v1
+$ kayentactl --scope kube_deployment:myappname
 ```
 
 - [x] make an app that takes traffic and shows a difference
 - [x] configure datadog
 - [x] deploy that through argo
-- [] create and deploy that generates traffic
-- [] create new repo for kubernetes infrastructure
-- [] create automation to replace docker tag in deployment object
-- [] push kayentactl container to the cloud on CI! (registry)
+- [x] create and deploy that generates traffic
+- [x] create new repo for kubernetes infrastructure
+- [x] create automation to replace docker tag in deployment object
+- [x] push kayentactl container to the cloud on CI! (registry)
 - [] get canary config to use what we want it to use for the app above.
 - [] how do we want to communicate failure through the CLI? 
+- [] how do we want to communicate progress through the CLI? 
 - [] docker container for kayentactl
 - [] create demo using CLI
 -----------------------------------
