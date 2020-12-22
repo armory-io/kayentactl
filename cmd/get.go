@@ -42,7 +42,12 @@ var getCmd = &cobra.Command{
 		}
 
 		if err := kayenta.Report(result, outFormat, os.Stdout); err != nil {
-			log.Fatalf("failed to generate result report: %s", err.Error())
+			if err == kayenta.ErrNotComplete {
+				log.Errorf("cannot generate report for running analysis %s", executionID)
+			} else {
+				log.Errorf("failed to generate result report: %s", err.Error())
+			}
+			os.Exit(1)
 		}
 	},
 }

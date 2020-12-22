@@ -84,7 +84,7 @@ var startCmd = &cobra.Command{
 		defer cancel()
 
 		ticker := time.NewTicker(checkInterval)
-		if err := kayenta.WaitForComplete(ctx, analysisID, kc, ticker); err != nil {
+		if err := kayenta.WaitForComplete(ctx, analysisID, kc, ticker, log.StandardLogger()); err != nil {
 			log.Fatalf(err.Error())
 		}
 		// generate some kind of report

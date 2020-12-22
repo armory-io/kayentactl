@@ -8,8 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -172,11 +170,18 @@ func DefaultHTTPClientFactory() *http.Client {
 type DefaultClient struct {
 	BaseURL       string
 	ClientFactory HTTPClientFactory
+	log           StdLogger
 }
 
 func ClientBaseURL(baseURL string) func(dc *DefaultClient) {
 	return func(dc *DefaultClient) {
 		dc.BaseURL = baseURL
+	}
+}
+
+func ClientLogger(l StdLogger) func(dc *DefaultClient) {
+	return func(dc *DefaultClient) {
+		dc.log = l
 	}
 }
 
@@ -191,6 +196,7 @@ func NewDefaultClient(opts ...func(dc *DefaultClient)) *DefaultClient {
 		// TODO: replace with actual kayenta port
 		BaseURL:       "http://localhost:8090",
 		ClientFactory: DefaultHTTPClientFactory,
+		log:           NoopStdLogger{},
 	}
 
 	for _, opt := range opts {
@@ -230,7 +236,7 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("failed to marshal request input: %w", err)
 	}
-	log.Debugf("Using following JSON for Canary Analysis: %s", b)
+	d.log.Debugf("Using following JSON for Canary Analysis: %s", b)
 	startQueryParams := map[string]string{
 		"storageAccountName": input.StorageAccountName,
 		"metricsAccountName": input.MetricsAccountName,
@@ -289,7 +295,7 @@ func (d *DefaultClient) UpdateCanaryConfig(cc CanaryConfig) (string, error) {
 	}
 	ccBytes, err := json.Marshal(cc)
 	if err != nil {
-		log.Error("Could not marshal canary config when creating canary config")
+		d.log.Error("Could not marshal canary config when creating canary config")
 		return "", err
 	}
 
@@ -316,7 +322,7 @@ func (d *DefaultClient) UpdateCanaryConfig(cc CanaryConfig) (string, error) {
 func (d *DefaultClient) CreateCanaryConfig(cc CanaryConfig) (string, error) {
 	ccBytes, err := json.Marshal(cc)
 	if err != nil {
-		log.Error("Could not marshal canary config when creating canary config")
+		d.log.Error("Could not marshal canary config when creating canary config")
 		return "", err
 	}
 	req, err := requestFactory(
@@ -338,7 +344,6 @@ func (d *DefaultClient) CreateCanaryConfig(cc CanaryConfig) (string, error) {
 //GetCanaryConfigs gets a list of canary configs from the Kayenta server
 func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, error) {
 
-	log.Info("Getting Canary Configs")
 	req, err := http.NewRequest(
 		http.MethodGet, d.getEndpoint(canaryConfigEndpoint, nil), nil)
 	if err != nil {
@@ -352,7 +357,6 @@ func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, er
 	if err := deserializeResponse(resp, &output); err != nil {
 		return nil, err
 	}
-	log.Infof("Found %d canary configs", len(output))
 	return output, nil
 
 }
