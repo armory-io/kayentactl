@@ -12,10 +12,8 @@ func UpdateScopes(scopes []Scope, scope, startTimeIso, endTimeIso string) []Scop
 	for _, s := range scopes {
 		s.ExperimentScope = scope
 		s.ControlScope = scope
-		if startTimeIso != "" && endTimeIso != "" {
-			s.StartTimeIso = startTimeIso
-			s.EndTimeIso = endTimeIso
-		}
+		s.StartTimeIso = startTimeIso
+		s.EndTimeIso = endTimeIso
 		updatedScopes = append(updatedScopes, s)
 	}
 	return updatedScopes
