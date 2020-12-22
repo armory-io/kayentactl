@@ -92,16 +92,43 @@ type StandaloneCanaryAnalysisOutput struct {
 }
 
 type GetStandaloneCanaryAnalysisOutput struct {
-	Status          string `json:"status"`
-	ExecutionStatus string `json:"executionStatus"`
-	PipelineID      string `json:"pipelineId"`
-	Complete        bool   `json:"complete"`
+	Status                        string                        `json:"status"`
+	ExecutionStatus               string                        `json:"executionStatus"`
+	PipelineID                    string                        `json:"pipelineId"`
+	Complete                      bool                          `json:"complete"`
+	CanaryAnalysisExecutionResult CanaryAnalysisExecutionResult `json:"canaryAnalysisExecutionResult"`
 
 	// TODO - there are more things we want here
 }
 
 func (g GetStandaloneCanaryAnalysisOutput) IsSuccessful() bool {
 	return g.Status == "succeeded"
+}
+
+type CanaryAnalysisExecutionResult struct {
+	DidPassThresholds  bool      `json:"didPassThresholds"`
+	HasWarnings        bool      `json:"hasWarnings"`
+	CanaryScoreMessage string    `json:"canaryScoreMessage"`
+	CanaryScores       []float64 `json:"canaryScores"`
+
+	CanaryExecutionResults []CanaryExecutionResult `json:"canaryExecutionResults"`
+}
+
+type CanaryExecutionResult struct {
+	Result struct {
+		JudgeResult    JudgeResult `json:"judgeResult"`
+		CanaryDuration string      `json:"canaryDuration"`
+	} `json:"result"`
+}
+
+type JudgeResult struct {
+	JudgeName   string        `json:"judgeName"`
+	GroupScores []MetricGroup `json:"groupScores"`
+}
+
+type MetricGroup struct {
+	Name  string  `json:"name"`
+	Score float64 `json:"score"`
 }
 
 //ServerError is returned whenever there is a problem
