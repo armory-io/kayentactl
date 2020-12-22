@@ -120,7 +120,13 @@ type CanaryExecutionResult struct {
 }
 
 type JudgeResult struct {
-	JudgeName   string        `json:"judgeName"`
+	JudgeName string `json:"judgeName"`
+	Results   []struct {
+		Name                 string   `json:"name"`
+		Classification       string   `json:"classification"`
+		ClassificationReason string   `json:"classificationReason"`
+		Groups               []string `json:"groups"`
+	} `json:"results"`
 	GroupScores []MetricGroup `json:"groupScores"`
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
 	"text/template"
 
 	"github.com/jedib0t/go-pretty/table"
@@ -23,16 +24,21 @@ HasWarnings: {{ .HasWarnings }}
 
 Results
 -------
+Measurements
+{{ .Measurements }}
+
+Group Results
 {{ .Results }}
 `
 
 type asciiReportData struct {
-	ID          string
-	Status      string
-	FinalScore  float64
-	Message     string
-	HasWarnings bool
-	Results     string
+	ID           string
+	Status       string
+	FinalScore   float64
+	Message      string
+	HasWarnings  bool
+	Results      string
+	Measurements string
 }
 
 func resultToAsciiReportData(result GetStandaloneCanaryAnalysisOutput) (asciiReportData, error) {
@@ -44,13 +50,18 @@ func resultToAsciiReportData(result GetStandaloneCanaryAnalysisOutput) (asciiRep
 	if err != nil {
 		return asciiReportData{}, err
 	}
+	measurementsTables, err := tableFromMeasurements(lastResult.Result.JudgeResult)
+	if err != nil {
+		return asciiReportData{}, err
+	}
 	return asciiReportData{
-		ID:          result.PipelineID,
-		Status:      result.ExecutionStatus,
-		FinalScore:  scores[len(scores)-1],
-		Message:     result.CanaryAnalysisExecutionResult.CanaryScoreMessage,
-		HasWarnings: result.CanaryAnalysisExecutionResult.HasWarnings,
-		Results:     resultsTable,
+		ID:           result.PipelineID,
+		Status:       result.ExecutionStatus,
+		FinalScore:   scores[len(scores)-1],
+		Message:      result.CanaryAnalysisExecutionResult.CanaryScoreMessage,
+		HasWarnings:  result.CanaryAnalysisExecutionResult.HasWarnings,
+		Results:      resultsTable,
+		Measurements: measurementsTables,
 	}, nil
 }
 
@@ -59,6 +70,16 @@ func tableFromJudgeResult(result JudgeResult) (string, error) {
 	writer.AppendHeader(table.Row{"Group", "Score"})
 	for _, score := range result.GroupScores {
 		writer.AppendRow(table.Row{score.Name, score.Score})
+	}
+	return writer.Render(), nil
+}
+
+func tableFromMeasurements(result JudgeResult) (string, error) {
+	writer := table.NewWriter()
+	writer.AppendHeader(table.Row{"Name", "Groups", "Result", "Reason"})
+	for _, score := range result.Results {
+		groups := strings.Join(score.Groups, ",")
+		writer.AppendRow(table.Row{score.Name, groups, score.Classification, score.ClassificationReason})
 	}
 	return writer.Render(), nil
 }
