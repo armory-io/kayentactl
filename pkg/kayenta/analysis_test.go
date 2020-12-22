@@ -34,7 +34,7 @@ func TestConfigureExecRequest(t *testing.T) {
 				EndTimeIso:      test.endIso,
 			},
 		}
-		output := UpdateScopes(input, test.scope, test.startIso, test.endIso)
+		output := UpdateScopes(input, test.scope, test.startIso, test.endIso, 10)
 		assert.Equal(t, output, expectedOutput)
 
 	}
