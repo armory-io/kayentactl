@@ -16,14 +16,14 @@ limitations under the License.
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/armory-io/kayentactl/pkg/kayenta"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+var outFormat string
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
@@ -36,14 +36,14 @@ var getCmd = &cobra.Command{
 		if executionID == "" {
 			log.Fatal("execution id is required")
 		}
-		out, err := kc.GetStandaloneCanaryAnalysis(executionID)
+		result, err := kc.GetStandaloneCanaryAnalysis(executionID)
 		if err != nil {
 			log.Fatalf("failed to fetch results of analysis: %s", err.Error())
 		}
 
-		b, _ := json.MarshalIndent(out, "", "  ")
-		fmt.Fprintln(os.Stdout, string(b))
-
+		if err := kayenta.Report(result, outFormat, os.Stdout); err != nil {
+			log.Fatalf("failed to generate result report: %s", err.Error())
+		}
 	},
 }
 
@@ -59,4 +59,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	getCmd.Flags().StringVarP(&outFormat, "output", "o", "pretty", "output format: json|pretty")
 }

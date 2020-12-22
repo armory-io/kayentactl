@@ -101,6 +101,9 @@ var startCmd = &cobra.Command{
 			exitCode = 1
 		}
 		log.Println(msg)
+		if err := kayenta.Report(result, "pretty", os.Stdout); err != nil {
+			log.Fatalf("error generating analysis report: %s", err.Error())
+		}
 		os.Exit(exitCode)
 	},
 }
