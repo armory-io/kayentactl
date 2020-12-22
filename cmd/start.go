@@ -119,7 +119,7 @@ func init() {
 	flags.StringVar(&startTimeIso, "start-time-iso", "", "start time for the analysis in ISO format. Ex: 2020-12-20T14:49:31.647Z")
 	flags.StringVar(&endTimeIso, "end-time-iso", "", "end time for the analysis in ISO format. Ex: 2020-12-20T15:49:31.647Z")
 
-	flags.DurationVar(&analysisInterval, "analysis-interval", 1, "Minutes between each analysis. Default is once per minute")
+	flags.DurationVar(&analysisInterval, "analysis-interval", 1*time.Minute, "Minutes between each analysis. Default is once per minute")
 	flags.DurationVar(&lifetimeDuration, "lifetime-duration", time.Minute*5, "Total duration time for the analysis")
 	flags.DurationVar(&checkInterval, "interval", time.Second*10, "polling interval")
 	flags.DurationVar(&timeout, "timeout", time.Hour*1, "timeout")
