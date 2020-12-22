@@ -36,7 +36,7 @@ const (
 // TODO: get rid of these package global variables. it was easier to port existing code by using them.
 var (
 	scope, configLocation, control, experiment, startTimeIso, endTimeIso string
-	lifetimeDuration, checkInterval, timeout                             time.Duration
+	controlOffset, lifetimeDuration, checkInterval, timeout              time.Duration
 )
 
 // startCmd represents the start command
@@ -63,8 +63,8 @@ var startCmd = &cobra.Command{
 			log.Fatal("could not decode canary config JSON, exiting")
 		}
 
+		input.ExecutionRequest.Scopes = kayenta.UpdateScopes(input.ExecutionRequest.Scopes, scope, startTimeIso, endTimeIso, controlOffset)
 		input.ExecutionRequest.LifetimeDurationMins = int(lifetimeDuration.Minutes())
-		input.ExecutionRequest.Scopes = kayenta.UpdateScopes(input.ExecutionRequest.Scopes, scope, startTimeIso, endTimeIso)
 
 		// start standalone canary
 		log.Infof("starting canary analysis with kayenta host: %v", kayentaURL)
@@ -103,4 +103,5 @@ func init() {
 	flags.DurationVar(&lifetimeDuration, "lifetime-duration", time.Minute*5, "Total duration time for the analysis")
 	flags.DurationVar(&checkInterval, "interval", time.Second*10, "polling interval")
 	flags.DurationVar(&timeout, "timeout", time.Hour*1, "timeout")
+	flags.DurationVar(&controlOffset, "control-offset", time.Hour*2, "The control offset to compare against the experiment, by default is your new deployment")
 }

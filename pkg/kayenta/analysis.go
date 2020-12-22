@@ -7,13 +7,14 @@ import (
 )
 
 //UpdateScopes is a helper function that will replace the values in an ExecRequest to produce the proper request
-func UpdateScopes(scopes []Scope, scope, startTimeIso, endTimeIso string) []Scope {
+func UpdateScopes(scopes []Scope, scope, startTimeIso, endTimeIso string, controlOffset time.Duration) []Scope {
 	updatedScopes := []Scope{}
 	for _, s := range scopes {
 		s.ExperimentScope = scope
 		s.ControlScope = scope
 		s.StartTimeIso = startTimeIso
 		s.EndTimeIso = endTimeIso
+		s.ControlOffsetInMins = int(controlOffset.Minutes())
 		updatedScopes = append(updatedScopes, s)
 	}
 	return updatedScopes

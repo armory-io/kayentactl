@@ -74,7 +74,7 @@ type Scope struct {
 	ScopeName           string `json:"scopeName"`
 	ControlScope        string `json:"controlScope"`
 	ControlLocation     string `json:"controlLocation"`
-	ControlOffsetInMins string `json:"controlOffsetInMins"`
+	ControlOffsetInMins int    `json:"controlOffsetInMins"`
 	ExperimentScope     string `json:"experimentScope"`
 	ExperimentLocation  string `json:"experimentLocation"`
 	Step                int    `json:"step"`
