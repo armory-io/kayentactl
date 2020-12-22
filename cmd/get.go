@@ -16,6 +16,12 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/armory-io/kayentactl/pkg/kayenta"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +30,21 @@ var getCmd = &cobra.Command{
 	Use:   "get [execution-id]",
 	Short: "",
 	Long:  ``,
-	Run:   func(cmd *cobra.Command, args []string) {},
+	Run: func(cmd *cobra.Command, args []string) {
+		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
+		executionID := args[0]
+		if executionID == "" {
+			log.Fatal("execution id is required")
+		}
+		out, err := kc.GetStandaloneCanaryAnalysis(executionID)
+		if err != nil {
+			log.Fatalf("failed to fetch results of analysis: %s", err.Error())
+		}
+
+		b, _ := json.MarshalIndent(out, "", "  ")
+		fmt.Fprintln(os.Stdout, string(b))
+
+	},
 }
 
 func init() {
