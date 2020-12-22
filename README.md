@@ -29,6 +29,8 @@ $ kayentactl analysis start --scope=kube_deployment:myappname
 - [x] set rolling update for slower deploy (isaac)
 - [] create demo using CLI (run end-to-end to tests)
 - [] add CI with github actions
+- [] move kayenta to the kubernetes cluster
+
 -----------------------------------
 - [] jenkins plugin
 - [] create demo using Jenkins
