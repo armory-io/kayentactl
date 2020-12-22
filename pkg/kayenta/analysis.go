@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+//UpdateScopes is a helper function that will replace the values in an ExecRequest to produce the proper request
+func UpdateScopes(scopes []Scope, scope, startTimeIso, endTimeIso string) []Scope {
+	updatedScopes := []Scope{}
+	for _, s := range scopes {
+		s.ExperimentScope = scope
+		s.ControlScope = scope
+		if startTimeIso != "" && endTimeIso != "" {
+			s.StartTimeIso = startTimeIso
+			s.EndTimeIso = endTimeIso
+		}
+		updatedScopes = append(updatedScopes, s)
+	}
+	return updatedScopes
+}
+
 //WaitForComplete this issues a call out to kayenta and then loops as it waits for it to finish. Likely we'll have to refactor the
 //call signature to inject dependencies, for example, a ticker perhaps should live otuside of this function
 func WaitForComplete(ctx context.Context, executionID string, client *DefaultClient, ticker *time.Ticker) error {
