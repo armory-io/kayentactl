@@ -79,8 +79,8 @@ type Scope struct {
 	ExperimentLocation  string `json:"experimentLocation"`
 	Step                int    `json:"step"`
 
-	StartTimeIso string `json:"startTimeIso"`
-	EndTimeIso   string `json:"endTimeIso"`
+	StartTimeIso string `json:"startTimeIso,omitempty"`
+	EndTimeIso   string `json:"endTimeIso,omitempty"`
 
 	ExtendedScopeParams map[string]string `json:"extendedScopeParams"`
 

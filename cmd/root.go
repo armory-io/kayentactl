@@ -16,9 +16,7 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-	"os"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -35,16 +33,16 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Error(err)
+		log.Fatal("Could parse CLI arguments. Exiting.")
 	}
 }
 
-var kayentaUrl string
+var kayentaURL string
 
 func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVarP(&kayentaUrl, "kayenta-url", "u", "http://localhost:8090", "kayenta url")
+	rootCmd.PersistentFlags().StringVarP(&kayentaURL, "kayenta-url", "u", "http://localhost:8090", "kayenta url")
 }
