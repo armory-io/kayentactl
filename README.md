@@ -4,8 +4,13 @@
 
 ### Simple usage with default canary configuration
 ```shell
-$ kayentactl --scope kube_deployment:myappname
+$ kayentactl analysis start --scope=kube_deployment:myappname
 ```
+
+### Adding a duration allows you to determine the duration of the experiment 
+```shell
+ kayentactl analysis start --scope=kube_deployment:spud-stories --lifetime-duration=2m
+ ```
 
 - [x] make an app that takes traffic and shows a difference
 - [x] configure datadog
