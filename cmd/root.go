@@ -49,7 +49,12 @@ func initLogs(level string) error {
 		return err
 	}
 	log.SetLevel(lvl)
-	log.SetFormatter(&logger.PlainLogger{})
+	var formatter log.Formatter = &logger.ColorizedLogger{}
+	if !color {
+		formatter = &logger.PlainLogger{}
+	}
+	log.SetFormatter(formatter)
+
 	return nil
 }
 
