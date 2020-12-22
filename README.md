@@ -21,12 +21,12 @@ $ kayentactl analysis start --scope=kube_deployment:myappname
 - [x] push kayentactl container to the cloud on CI! (registry)
 - [x] docker container for kayentactl
 - [x] update spud stories application to use command line args (isaac)
-- [] get canary config to use what we want it to use for the app above.
-- [] how do we want to communicate failure through the CLI? 
-- [] exit properly with proper error code
-- [] show pretty progress 
-- [] show pretty results
-- [] set rolling update for slower deploy (isaac)
+- [x] get canary config to use what we want it to use for the app above.
+- [x] how do we want to communicate failure through the CLI? 
+- [x] exit properly with proper error code
+- [x] show pretty progress 
+- [x] show pretty results
+- [x] set rolling update for slower deploy (isaac)
 - [] create demo using CLI (run end-to-end to tests)
 - [] add CI with github actions
 -----------------------------------
