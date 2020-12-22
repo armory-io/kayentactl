@@ -13,7 +13,7 @@ func UpdateScopes(scopes []Scope, scope, startTimeIso, endTimeIso string, contro
 		s.ControlScope = scope
 		s.StartTimeIso = startTimeIso
 		s.EndTimeIso = endTimeIso
-		s.ControlOffsetInMins = int(controlOffset.Minutes())
+		s.ControlOffsetInMinutes = int(controlOffset.Minutes())
 		updatedScopes = append(updatedScopes, s)
 	}
 	return updatedScopes

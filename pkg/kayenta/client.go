@@ -69,13 +69,13 @@ type Threshold struct {
 }
 
 type Scope struct {
-	ScopeName           string `json:"scopeName"`
-	ControlScope        string `json:"controlScope"`
-	ControlLocation     string `json:"controlLocation"`
-	ControlOffsetInMins int    `json:"controlOffsetInMins"`
-	ExperimentScope     string `json:"experimentScope"`
-	ExperimentLocation  string `json:"experimentLocation"`
-	Step                int    `json:"step"`
+	ScopeName              string `json:"scopeName"`
+	ControlScope           string `json:"controlScope"`
+	ControlLocation        string `json:"controlLocation"`
+	ControlOffsetInMinutes int    `json:"controlOffsetInMinutes"`
+	ExperimentScope        string `json:"experimentScope"`
+	ExperimentLocation     string `json:"experimentLocation"`
+	Step                   int    `json:"step"`
 
 	StartTimeIso string `json:"startTimeIso,omitempty"`
 	EndTimeIso   string `json:"endTimeIso,omitempty"`
