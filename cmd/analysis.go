@@ -13,10 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package main
+package cmd
 
-import "github.com/armory-io/kayentactl/cmd"
+import (
+	"github.com/spf13/cobra"
+)
 
-func main() {
-	cmd.Execute()
+// analysisCmd represents the analysis command
+var analysisCmd = &cobra.Command{
+	Use:   "analysis",
+	Short: "",
+	Long:  ``,
+}
+
+func init() {
+	rootCmd.AddCommand(analysisCmd)
 }
