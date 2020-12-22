@@ -16,17 +16,41 @@ limitations under the License.
 package cmd
 
 import (
+	"os"
+
+	"github.com/armory-io/kayentactl/internal/logger"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
+var (
+	verbosity string
+	color     bool
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "kayentactl",
 	Short: "",
 	Long:  ``,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := initLogs(verbosity); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
+func initLogs(level string) error {
+	log.SetOutput(os.Stdout)
+	lvl, err := log.ParseLevel(level)
+	if err != nil {
+		return err
+	}
+	log.SetLevel(lvl)
+	log.SetFormatter(&logger.PlainLogger{})
+	return nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,4 +69,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVarP(&kayentaURL, "kayenta-url", "u", "http://localhost:8090", "kayenta url")
+	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", log.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic)")
+	rootCmd.PersistentFlags().BoolVar(&color, "no-color", false, "disable output colors")
+
 }

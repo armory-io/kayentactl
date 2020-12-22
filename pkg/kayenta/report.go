@@ -3,11 +3,14 @@ package kayenta
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"text/template"
 
 	"github.com/jedib0t/go-pretty/table"
 )
+
+var ErrNotComplete = errors.New("execution is still in progress")
 
 const asciiReport = `Analysis Report - {{ .ID }}
 
@@ -81,6 +84,10 @@ func JsonReport(result GetStandaloneCanaryAnalysisOutput) ([]byte, error) {
 }
 
 func Report(result GetStandaloneCanaryAnalysisOutput, format string, writer io.Writer) error {
+	if !result.Complete {
+		return ErrNotComplete
+	}
+
 	var b []byte
 	var err error
 	switch format {
