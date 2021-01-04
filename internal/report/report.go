@@ -1,4 +1,4 @@
-package kayenta
+package report
 
 import (
 	"bytes"
@@ -9,12 +9,14 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/armory-io/kayentactl/pkg/kayenta"
+
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/olekukonko/tablewriter"
 )
 
-var ErrNotComplete = errors.New("execution is still in progress")
+var ErrNotComplete = errors.New("execution is still in analysis")
 
 const AsciiKayenta string = `
    __ _______  _______  ___________  _____________ 
@@ -52,7 +54,7 @@ type asciiReportData struct {
 	Measurements string
 }
 
-func resultToAsciiReportData(result GetStandaloneCanaryAnalysisOutput) (asciiReportData, error) {
+func resultToAsciiReportData(result kayenta.GetStandaloneCanaryAnalysisOutput) (asciiReportData, error) {
 	scores := result.CanaryAnalysisExecutionResult.CanaryScores
 	canaryResults := result.CanaryAnalysisExecutionResult.CanaryExecutionResults
 	lastResult := canaryResults[len(canaryResults)-1]
@@ -90,7 +92,7 @@ func resultToAsciiReportData(result GetStandaloneCanaryAnalysisOutput) (asciiRep
 	}, nil
 }
 
-func tableFromJudgeResult(result JudgeResult) (string, error) {
+func tableFromJudgeResult(result kayenta.JudgeResult) (string, error) {
 	writer := table.NewWriter()
 	writer.AppendHeader(table.Row{"Group", "Score"})
 	for _, score := range result.GroupScores {
@@ -99,7 +101,7 @@ func tableFromJudgeResult(result JudgeResult) (string, error) {
 	return writer.Render(), nil
 }
 
-func tableFromMeasurements(result JudgeResult) (string, error) {
+func tableFromMeasurements(result kayenta.JudgeResult) (string, error) {
 
 	wb := new(bytes.Buffer)
 	table := tablewriter.NewWriter(wb)
@@ -124,7 +126,7 @@ func tableFromMeasurements(result JudgeResult) (string, error) {
 	return wb.String(), nil
 }
 
-func TableReport(result GetStandaloneCanaryAnalysisOutput) ([]byte, error) {
+func TableReport(result kayenta.GetStandaloneCanaryAnalysisOutput) ([]byte, error) {
 	tmpl, err := template.New("asciiReport").Parse(asciiReport)
 	if err != nil {
 		return nil, err
@@ -140,11 +142,11 @@ func TableReport(result GetStandaloneCanaryAnalysisOutput) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func JsonReport(result GetStandaloneCanaryAnalysisOutput) ([]byte, error) {
+func JsonReport(result kayenta.GetStandaloneCanaryAnalysisOutput) ([]byte, error) {
 	return json.MarshalIndent(result, "", "  ")
 }
 
-func Report(result GetStandaloneCanaryAnalysisOutput, format string, writer io.Writer) error {
+func Report(result kayenta.GetStandaloneCanaryAnalysisOutput, format string, writer io.Writer) error {
 	if !result.Complete {
 		return ErrNotComplete
 	}

@@ -18,6 +18,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/armory-io/kayentactl/internal/report"
+
 	"github.com/armory-io/kayentactl/pkg/kayenta"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -41,8 +43,8 @@ var getCmd = &cobra.Command{
 			log.Fatalf("failed to fetch results of analysis: %s", err.Error())
 		}
 
-		if err := kayenta.Report(result, outFormat, os.Stdout); err != nil {
-			if err == kayenta.ErrNotComplete {
+		if err := report.Report(result, outFormat, os.Stdout); err != nil {
+			if err == report.ErrNotComplete {
 				log.Errorf("cannot generate report for running analysis %s", executionID)
 			} else {
 				log.Errorf("failed to generate result report: %s", err.Error())

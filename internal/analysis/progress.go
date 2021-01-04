@@ -1,4 +1,4 @@
-package progress
+package analysis
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 )
 
 // GraphicalProgressPrinter implements a kayenta.ProgressFunc
-// that outputs the progress of an analysis while we wait for
+// that outputs the analysis of an analysis while we wait for
 // the final result
 type GraphicalProgressPrinter struct {
 	s         *spinner.Spinner
