@@ -1,7 +1,9 @@
-package kayenta
+package analysis
 
 import (
 	"testing"
+
+	"github.com/armory-io/kayentactl/pkg/kayenta"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +19,7 @@ func TestConfigureExecRequest(t *testing.T) {
 		{scope: "MOCK_SCOPE", startIso: "", endIso: ""},
 	}
 	for _, test := range tests {
-		input := []Scope{
+		input := []kayenta.Scope{
 			{
 				ControlScope:    "PLACEHOLDER_CTRL",
 				ExperimentScope: "PLACEHOLDER_EXPR",
@@ -26,7 +28,7 @@ func TestConfigureExecRequest(t *testing.T) {
 			},
 		}
 
-		expectedOutput := []Scope{
+		expectedOutput := []kayenta.Scope{
 			{
 				ControlScope:    test.scope,
 				ExperimentScope: test.scope,

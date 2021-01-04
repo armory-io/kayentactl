@@ -23,7 +23,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/armory-io/kayentactl/internal/progress"
+	"github.com/armory-io/kayentactl/internal/report"
+
+	"github.com/armory-io/kayentactl/internal/analysis"
 
 	"github.com/armory-io/kayentactl/pkg/kayenta"
 
@@ -68,7 +70,7 @@ var startCmd = &cobra.Command{
 		}
 
 		input.ExecutionRequest.AnalysisIntervalMins = int(analysisInterval.Minutes())
-		input.ExecutionRequest.Scopes = kayenta.UpdateScopes(input.ExecutionRequest.Scopes, scope, startTimeIso, endTimeIso, controlOffset)
+		input.ExecutionRequest.Scopes = analysis.UpdateScopes(input.ExecutionRequest.Scopes, scope, startTimeIso, endTimeIso, controlOffset)
 		input.ExecutionRequest.LifetimeDurationMins = int(lifetimeDuration.Minutes())
 
 		// start standalone canary
@@ -85,9 +87,9 @@ var startCmd = &cobra.Command{
 		defer cancel()
 
 		ticker := time.NewTicker(checkInterval)
-		progressPrinter := progress.NewDefaultGraphicalProgressPrinter()
+		progressPrinter := analysis.NewDefaultGraphicalProgressPrinter()
 		progressPrinter.Start()
-		if err := kayenta.WaitForComplete(ctx, analysisID, kc, ticker, progressPrinter.PrintProgress); err != nil {
+		if err := analysis.WaitForComplete(ctx, analysisID, kc, ticker, progressPrinter.PrintProgress); err != nil {
 			log.Fatalf(err.Error())
 		}
 		progressPrinter.Stop()
@@ -98,11 +100,11 @@ var startCmd = &cobra.Command{
 			log.Fatalf("Failed to get analysis result: %s", err.Error())
 		}
 
-		if err := kayenta.Report(result, "pretty", os.Stdout); err != nil {
+		if err := report.Report(result, "pretty", os.Stdout); err != nil {
 			log.Fatalf("error generating analysis report: %s", err.Error())
 		}
 
-		fmt.Println(progress.TableStatus(result))
+		fmt.Println(analysis.TableStatus(result))
 
 		exitCode := 1
 		if result.IsSuccessful() {

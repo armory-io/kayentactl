@@ -182,18 +182,11 @@ func DefaultHTTPClientFactory() *http.Client {
 type DefaultClient struct {
 	BaseURL       string
 	ClientFactory HTTPClientFactory
-	log           StdLogger
 }
 
 func ClientBaseURL(baseURL string) func(dc *DefaultClient) {
 	return func(dc *DefaultClient) {
 		dc.BaseURL = baseURL
-	}
-}
-
-func ClientLogger(l StdLogger) func(dc *DefaultClient) {
-	return func(dc *DefaultClient) {
-		dc.log = l
 	}
 }
 
@@ -208,7 +201,6 @@ func NewDefaultClient(opts ...func(dc *DefaultClient)) *DefaultClient {
 		// TODO: replace with actual kayenta port
 		BaseURL:       "http://localhost:8090",
 		ClientFactory: DefaultHTTPClientFactory,
-		log:           NoopStdLogger{},
 	}
 
 	for _, opt := range opts {
@@ -248,7 +240,6 @@ func (d *DefaultClient) StartStandaloneCanaryAnalysis(input StandaloneCanaryAnal
 	if err != nil {
 		return StandaloneCanaryAnalysisOutput{}, fmt.Errorf("failed to marshal request input: %w", err)
 	}
-	d.log.Debugf("Using following JSON for Canary Analysis: %s", b)
 	startQueryParams := map[string]string{
 		"storageAccountName": input.StorageAccountName,
 		"metricsAccountName": input.MetricsAccountName,
@@ -307,8 +298,7 @@ func (d *DefaultClient) UpdateCanaryConfig(cc CanaryConfig) (string, error) {
 	}
 	ccBytes, err := json.Marshal(cc)
 	if err != nil {
-		d.log.Error("Could not marshal canary config when creating canary config")
-		return "", err
+		return "", fmt.Errorf("could not marshal canary config: %w", err)
 	}
 
 	req, err := requestFactory(
@@ -334,8 +324,7 @@ func (d *DefaultClient) UpdateCanaryConfig(cc CanaryConfig) (string, error) {
 func (d *DefaultClient) CreateCanaryConfig(cc CanaryConfig) (string, error) {
 	ccBytes, err := json.Marshal(cc)
 	if err != nil {
-		d.log.Error("Could not marshal canary config when creating canary config")
-		return "", err
+		return "", fmt.Errorf("could not marshal canary config: %w", err)
 	}
 	req, err := requestFactory(
 		http.MethodPost, d.getEndpoint(canaryConfigEndpoint, nil), bytes.NewReader(ccBytes))

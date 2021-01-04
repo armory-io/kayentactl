@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/armory-io/kayentactl/internal/report"
+
 	"github.com/armory-io/kayentactl/internal/logger"
-	"github.com/armory-io/kayentactl/pkg/kayenta"
 	"github.com/fatih/color"
 
 	log "github.com/sirupsen/logrus"
@@ -66,7 +67,7 @@ func initLogs(level string) error {
 
 func Execute() {
 
-	fmt.Printf("%v\n", color.HiMagentaString(kayenta.AsciiKayenta))
+	fmt.Printf("%v\n", color.HiMagentaString(report.AsciiKayenta))
 	if err := rootCmd.Execute(); err != nil {
 		log.Error(err)
 		log.Fatal("Could not parse CLI arguments. Exiting.")
