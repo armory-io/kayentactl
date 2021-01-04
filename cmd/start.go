@@ -23,6 +23,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/armory-io/kayentactl/internal/progress"
+
 	"github.com/armory-io/kayentactl/pkg/kayenta"
 
 	"github.com/fatih/color"
@@ -83,9 +85,13 @@ var startCmd = &cobra.Command{
 		defer cancel()
 
 		ticker := time.NewTicker(checkInterval)
-		if err := kayenta.WaitForComplete(ctx, analysisID, kc, ticker, log.StandardLogger()); err != nil {
+		progressPrinter := progress.NewDefaultGraphicalProgressPrinter()
+		progressPrinter.Start()
+		if err := kayenta.WaitForComplete(ctx, analysisID, kc, ticker, progressPrinter.PrintProgress); err != nil {
 			log.Fatalf(err.Error())
 		}
+		progressPrinter.Stop()
+
 		// generate some kind of report
 		result, err := kc.GetStandaloneCanaryAnalysis(analysisID)
 		if err != nil {
@@ -96,7 +102,7 @@ var startCmd = &cobra.Command{
 			log.Fatalf("error generating analysis report: %s", err.Error())
 		}
 
-		fmt.Println(kayenta.TableStatus(result))
+		fmt.Println(progress.TableStatus(result))
 
 		exitCode := 1
 		if result.IsSuccessful() {
