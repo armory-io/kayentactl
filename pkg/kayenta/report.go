@@ -5,15 +5,26 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/table"
+	"github.com/olekukonko/tablewriter"
 )
 
 var ErrNotComplete = errors.New("execution is still in progress")
 
-const asciiReport = `Analysis Report - {{ .ID }}
+const AsciiKayenta string = `
+   __ _______  _______  ___________  _____________ 
+  / //_/ _ \ \/ / __/ |/ /_  __/ _ |/ ___/_  __/ / 
+ / ,< / __ |\  / _//    / / / / __ / /__  / / / /__
+/_/|_/_/ |_|/_/___/_/|_/ /_/ /_/ |_\___/ /_/ /____/
+`
+const asciiReport string = `
+
+Analysis Report For Execution ID: {{ .ID }}
 
 Summary
 -------
@@ -22,19 +33,19 @@ Final Score: {{ .FinalScore }}
 Message: {{ .Message }}
 HasWarnings: {{ .HasWarnings }}
 
-Results
--------
 Measurements
 {{ .Measurements }}
 
 Group Results
 {{ .Results }}
+
+Stage Results
 `
 
 type asciiReportData struct {
 	ID           string
 	Status       string
-	FinalScore   float64
+	FinalScore   string
 	Message      string
 	HasWarnings  bool
 	Results      string
@@ -54,10 +65,24 @@ func resultToAsciiReportData(result GetStandaloneCanaryAnalysisOutput) (asciiRep
 	if err != nil {
 		return asciiReportData{}, err
 	}
+
+	execStatus := color.GreenString(result.ExecutionStatus)
+	if result.ExecutionStatus == "TERMINAL" {
+		execStatus = color.RedString(result.ExecutionStatus)
+	}
+
+	score := int(scores[len(scores)-1])
+	scoreStr := color.GreenString(strconv.Itoa(score))
+	if score == 0 {
+		scoreStr = color.RedString("0")
+	}
+	if result.ExecutionStatus == "TERMINAL" {
+		execStatus = color.RedString(result.ExecutionStatus)
+	}
 	return asciiReportData{
-		ID:           result.PipelineID,
-		Status:       result.ExecutionStatus,
-		FinalScore:   scores[len(scores)-1],
+		ID:           color.GreenString(result.PipelineID),
+		Status:       execStatus,
+		FinalScore:   scoreStr,
 		Message:      result.CanaryAnalysisExecutionResult.CanaryScoreMessage,
 		HasWarnings:  result.CanaryAnalysisExecutionResult.HasWarnings,
 		Results:      resultsTable,
@@ -75,13 +100,28 @@ func tableFromJudgeResult(result JudgeResult) (string, error) {
 }
 
 func tableFromMeasurements(result JudgeResult) (string, error) {
-	writer := table.NewWriter()
-	writer.AppendHeader(table.Row{"Name", "Groups", "Result", "Reason"})
+
+	wb := new(bytes.Buffer)
+	table := tablewriter.NewWriter(wb)
+	table.SetHeader([]string{"Name", "Groups", "Results", "Reason"})
+	table.SetAutoWrapText(false)
+
 	for _, score := range result.Results {
 		groups := strings.Join(score.Groups, ",")
-		writer.AppendRow(table.Row{score.Name, groups, score.Classification, score.ClassificationReason})
+		statusColor := tablewriter.Colors{tablewriter.Bold, tablewriter.FgWhiteColor}
+		reasonColor := tablewriter.Colors{tablewriter.Bold, tablewriter.FgWhiteColor}
+		classification := strings.ToUpper(score.Classification)
+		if classification == "PASS" {
+			statusColor = tablewriter.Colors{tablewriter.Bold, tablewriter.FgGreenColor}
+		} else if classification == "HIGH" || classification == "LOW" {
+			statusColor = tablewriter.Colors{tablewriter.Bold, tablewriter.FgRedColor}
+			reasonColor = tablewriter.Colors{tablewriter.Bold, tablewriter.FgYellowColor}
+		}
+		r := []string{score.Name, groups, classification, score.ClassificationReason}
+		table.Rich(r, []tablewriter.Colors{{}, {}, statusColor, reasonColor})
 	}
-	return writer.Render(), nil
+	table.Render()
+	return wb.String(), nil
 }
 
 func TableReport(result GetStandaloneCanaryAnalysisOutput) ([]byte, error) {

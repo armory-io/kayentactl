@@ -89,11 +89,18 @@ type StandaloneCanaryAnalysisOutput struct {
 	CanaryAnalysisExecutionID string `json:"canaryAnalysisExecutionId"`
 }
 
+type StageStatus struct {
+	StageType   string `json:"type"`
+	Name        string `json:"name"`
+	Status      string `json:status"`
+	ExecutionID string `json:executionId"`
+}
 type GetStandaloneCanaryAnalysisOutput struct {
 	Status                        string                        `json:"status"`
 	ExecutionStatus               string                        `json:"executionStatus"`
 	PipelineID                    string                        `json:"pipelineId"`
 	Complete                      bool                          `json:"complete"`
+	Stages                        []StageStatus                 `json:"stageStatus"`
 	CanaryAnalysisExecutionResult CanaryAnalysisExecutionResult `json:"canaryAnalysisExecutionResult"`
 
 	// TODO - there are more things we want here
@@ -104,11 +111,10 @@ func (g GetStandaloneCanaryAnalysisOutput) IsSuccessful() bool {
 }
 
 type CanaryAnalysisExecutionResult struct {
-	DidPassThresholds  bool      `json:"didPassThresholds"`
-	HasWarnings        bool      `json:"hasWarnings"`
-	CanaryScoreMessage string    `json:"canaryScoreMessage"`
-	CanaryScores       []float64 `json:"canaryScores"`
-
+	DidPassThresholds      bool                    `json:"didPassThresholds"`
+	HasWarnings            bool                    `json:"hasWarnings"`
+	CanaryScoreMessage     string                  `json:"canaryScoreMessage"`
+	CanaryScores           []float64               `json:"canaryScores"`
 	CanaryExecutionResults []CanaryExecutionResult `json:"canaryExecutionResults"`
 }
 

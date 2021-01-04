@@ -16,9 +16,12 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/armory-io/kayentactl/internal/logger"
+	"github.com/armory-io/kayentactl/pkg/kayenta"
+	"github.com/fatih/color"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -26,7 +29,7 @@ import (
 
 var (
 	verbosity string
-	color     bool
+	noColor   bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -50,7 +53,7 @@ func initLogs(level string) error {
 	}
 	log.SetLevel(lvl)
 	var formatter log.Formatter = &logger.ColorizedLogger{}
-	if !color {
+	if !noColor {
 		formatter = &logger.PlainLogger{}
 	}
 	log.SetFormatter(formatter)
@@ -60,10 +63,13 @@ func initLogs(level string) error {
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
+
 func Execute() {
+
+	fmt.Printf("%v\n", color.HiMagentaString(kayenta.AsciiKayenta))
 	if err := rootCmd.Execute(); err != nil {
 		log.Error(err)
-		log.Fatal("Could parse CLI arguments. Exiting.")
+		log.Fatal("Could not parse CLI arguments. Exiting.")
 	}
 }
 
@@ -75,6 +81,6 @@ func init() {
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVarP(&kayentaURL, "kayenta-url", "u", "http://localhost:8090", "kayenta url")
 	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", log.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic)")
-	rootCmd.PersistentFlags().BoolVar(&color, "no-color", false, "disable output colors")
+	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable output colors")
 
 }

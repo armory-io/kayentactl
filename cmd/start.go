@@ -25,13 +25,14 @@ import (
 
 	"github.com/armory-io/kayentactl/pkg/kayenta"
 
+	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 const (
 	//TODO: This is being hosted in Isaac's personal github account, we'll need to move this somewhere better.
-	defaultCanaryConfig string = "https://gist.githubusercontent.com/imosquera/399a89ad65e4f625fc2e0f0822dc5911/raw/2a0afe8fb482d57afdcb1188dfcdf8bf15403b8c/canary_config.json"
+	defaultCanaryConfig string = "https://gist.githubusercontent.com/imosquera/399a89ad65e4f625fc2e0f0822dc5911/raw/faf0bec17f0ba98189c67a1ddb05cdd965b4358e/canary_config.json"
 )
 
 // TODO: get rid of these package global variables. it was easier to port existing code by using them.
@@ -48,14 +49,14 @@ var startCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
 
-		log.Printf("fetching canary config from %s", configLocation)
+		log.Debugf("Fetching canary config from: %s", color.BlueString(configLocation))
 		resp, err := http.Get(configLocation)
 		if err != nil {
 			log.Error(err)
 			log.Fatalf("Could not get default canary config json at locations: %s", configLocation)
 		}
 		defer resp.Body.Close()
-		log.Println("canary config fetched successfully")
+		log.Debug("Canary config fetched successfully")
 
 		var input kayenta.StandaloneCanaryAnalysisInput
 		err = json.NewDecoder(resp.Body).Decode(&input)
@@ -69,17 +70,15 @@ var startCmd = &cobra.Command{
 		input.ExecutionRequest.LifetimeDurationMins = int(lifetimeDuration.Minutes())
 
 		// start standalone canary
-		log.Infof("starting canary analysis with kayenta host: %v", kayentaURL)
+		log.Debugf("Analysis Execution starting with kayenta host: %v", color.BlueString(kayentaURL))
 		output, err := kc.StartStandaloneCanaryAnalysis(input)
 		if err != nil {
 			log.Fatalf("error starting canary analysis: %s", err.Error())
 		}
-
 		analysisID := output.CanaryAnalysisExecutionID
-		log.Info(fmt.Sprintf("canary analysis started with id %s", analysisID))
+		log.Info(fmt.Sprintf("Analysis Execution ID: %s", color.GreenString(analysisID)))
 
 		// poll until standalone canary is complete
-		log.Info("polling until canary analysis is complete")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
@@ -88,22 +87,20 @@ var startCmd = &cobra.Command{
 			log.Fatalf(err.Error())
 		}
 		// generate some kind of report
-		log.Info("canary analysis complete.")
-		log.Info("getting analysis result")
 		result, err := kc.GetStandaloneCanaryAnalysis(analysisID)
 		if err != nil {
-			log.Fatalf("failed to get analysis result: %s", err.Error())
+			log.Fatalf("Failed to get analysis result: %s", err.Error())
 		}
 
-		exitCode := 0
-		msg := "analysis was successful"
-		if !result.IsSuccessful() {
-			msg = fmt.Sprintf("analysis failed. result: %s", result.Status)
-			exitCode = 1
-		}
-		log.Println(msg)
 		if err := kayenta.Report(result, "pretty", os.Stdout); err != nil {
 			log.Fatalf("error generating analysis report: %s", err.Error())
+		}
+
+		fmt.Println(kayenta.TableStatus(result))
+
+		exitCode := 1
+		if result.IsSuccessful() {
+			exitCode = 0
 		}
 		os.Exit(exitCode)
 	},
@@ -121,7 +118,7 @@ func init() {
 
 	flags.DurationVar(&analysisInterval, "analysis-interval", 1*time.Minute, "Minutes between each analysis. Default is once per minute")
 	flags.DurationVar(&lifetimeDuration, "lifetime-duration", time.Minute*5, "Total duration time for the analysis")
-	flags.DurationVar(&checkInterval, "interval", time.Second*10, "polling interval")
-	flags.DurationVar(&timeout, "timeout", time.Hour*1, "timeout")
-	flags.DurationVar(&controlOffset, "control-offset", time.Hour*2, "The control offset to compare against the experiment, by default is your new deployment")
+	flags.DurationVar(&checkInterval, "interval", time.Second*5, "polling interval")
+	flags.DurationVar(&timeout, "timeout", time.Hour, "timeout")
+	flags.DurationVar(&controlOffset, "control-offset", time.Hour, "The control offset to compare against the experiment, by default is your new deployment")
 }
