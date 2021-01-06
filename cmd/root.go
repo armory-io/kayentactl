@@ -16,21 +16,17 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/armory-io/kayentactl/internal/report"
-
 	"github.com/armory-io/kayentactl/internal/logger"
-	"github.com/fatih/color"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
-	verbosity string
-	noColor   bool
+	verbosity  string
+	noColor    bool
+	kayentaURL string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -66,15 +62,11 @@ func initLogs(level string) error {
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 
 func Execute() {
-
-	fmt.Printf("%v\n", color.HiMagentaString(report.AsciiKayenta))
 	if err := rootCmd.Execute(); err != nil {
 		log.Error(err)
 		log.Fatal("Could not parse CLI arguments. Exiting.")
 	}
 }
-
-var kayentaURL string
 
 func init() {
 	// Here you will define your flags and configuration settings.
