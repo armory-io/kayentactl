@@ -43,6 +43,7 @@ const (
 var (
 	scope, configLocation, control, experiment, startTimeIso, endTimeIso      string
 	controlOffset, lifetimeDuration, analysisInterval, checkInterval, timeout time.Duration
+	noWait                                                                    bool
 )
 
 // startCmd represents the start command
@@ -51,6 +52,9 @@ var startCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		if !noColor {
+			fmt.Printf("%v\n", color.HiMagentaString(report.AsciiKayenta))
+		}
 		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
 
 		log.Debugf("Fetching canary config from: %s", color.BlueString(configLocation))
@@ -81,6 +85,12 @@ var startCmd = &cobra.Command{
 		}
 		analysisID := output.CanaryAnalysisExecutionID
 		log.Info(fmt.Sprintf("Analysis Execution ID: %s", color.GreenString(analysisID)))
+
+		// if the no-wait flag is set, we exit early. this enables users
+		// to implement their own wait login within scripts
+		if noWait {
+			return
+		}
 
 		// poll until standalone canary is complete
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -129,4 +139,6 @@ func init() {
 	flags.DurationVar(&checkInterval, "interval", time.Second*5, "polling interval")
 	flags.DurationVar(&timeout, "timeout", time.Hour, "timeout")
 	flags.DurationVar(&controlOffset, "control-offset", time.Hour, "The control offset to compare against the experiment, by default is your new deployment")
+
+	flags.BoolVar(&noWait, "no-wait", false, "don't wait for canary execution to complete before exiting")
 }
