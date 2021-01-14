@@ -17,11 +17,11 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
+
+	"github.com/armory-io/kayentactl/internal/canaryConfig"
 
 	"github.com/armory-io/kayentactl/internal/report"
 
@@ -58,19 +58,9 @@ var startCmd = &cobra.Command{
 		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
 
 		log.Debugf("Fetching canary config from: %s", color.BlueString(configLocation))
-		resp, err := http.Get(configLocation)
+		input, err := canaryConfig.GetCanaryConfig(configLocation)
 		if err != nil {
-			log.Error(err)
-			log.Fatalf("Could not get default canary config json at locations: %s", configLocation)
-		}
-		defer resp.Body.Close()
-		log.Debug("Canary config fetched successfully")
-
-		var input kayenta.StandaloneCanaryAnalysisInput
-		err = json.NewDecoder(resp.Body).Decode(&input)
-		if err != nil {
-			log.Error(err)
-			log.Fatal("could not decode canary config JSON, exiting")
+			log.Fatalf("failed to fetch and parse canary config: %s", err.Error())
 		}
 
 		input.ExecutionRequest.AnalysisIntervalMins = int(analysisInterval.Minutes())
@@ -79,7 +69,7 @@ var startCmd = &cobra.Command{
 
 		// start standalone canary
 		log.Debugf("Analysis Execution starting with kayenta host: %v", color.BlueString(kayentaURL))
-		output, err := kc.StartStandaloneCanaryAnalysis(input)
+		output, err := kc.StartStandaloneCanaryAnalysis(*input)
 		if err != nil {
 			log.Fatalf("error starting canary analysis: %s", err.Error())
 		}
@@ -127,7 +117,7 @@ var startCmd = &cobra.Command{
 func init() {
 	analysisCmd.AddCommand(startCmd)
 	flags := startCmd.Flags()
-	flags.StringVar(&configLocation, "canary-config-url", defaultCanaryConfig, "location of canary configuration")
+	flags.StringVar(&configLocation, "canary-config", defaultCanaryConfig, "location of canary configuration")
 	flags.StringVarP(&scope, "scope", "s", "", "name of the scope to use")
 	flags.StringVarP(&control, "control", "c", "", "application to use as the experiment control (i.e. baseline)")
 	flags.StringVarP(&experiment, "experiment", "e", "", "application to use as the experiment  (i.e. canary)")
