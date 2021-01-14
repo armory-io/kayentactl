@@ -69,15 +69,15 @@ func resultToAsciiReportData(result kayenta.GetStandaloneCanaryAnalysisOutput) (
 	}
 
 	execStatus := color.GreenString(result.ExecutionStatus)
-	if result.ExecutionStatus == "TERMINAL" {
-		execStatus = color.RedString(result.ExecutionStatus)
+	score := strconv.Itoa(int(scores[len(scores)-1]))
+	scoreStr := color.GreenString(score)
+	finalMsg := color.GreenString(result.CanaryAnalysisExecutionResult.CanaryScoreMessage)
+	if !result.CanaryAnalysisExecutionResult.DidPassThresholds {
+		scoreStr = color.RedString(score)
+		finalMsg = color.RedString(result.CanaryAnalysisExecutionResult.CanaryScoreMessage)
+		execStatus = color.YellowString(result.ExecutionStatus)
 	}
 
-	score := int(scores[len(scores)-1])
-	scoreStr := color.GreenString(strconv.Itoa(score))
-	if score == 0 {
-		scoreStr = color.RedString("0")
-	}
 	if result.ExecutionStatus == "TERMINAL" {
 		execStatus = color.RedString(result.ExecutionStatus)
 	}
@@ -85,7 +85,7 @@ func resultToAsciiReportData(result kayenta.GetStandaloneCanaryAnalysisOutput) (
 		ID:           color.GreenString(result.PipelineID),
 		Status:       execStatus,
 		FinalScore:   scoreStr,
-		Message:      result.CanaryAnalysisExecutionResult.CanaryScoreMessage,
+		Message:      finalMsg,
 		HasWarnings:  result.CanaryAnalysisExecutionResult.HasWarnings,
 		Results:      resultsTable,
 		Measurements: measurementsTables,
@@ -147,7 +147,7 @@ func JsonReport(result kayenta.GetStandaloneCanaryAnalysisOutput) ([]byte, error
 }
 
 func Report(result kayenta.GetStandaloneCanaryAnalysisOutput, format string, writer io.Writer) error {
-	if !result.Complete {
+	if !result.Complete && format != "json" {
 		return ErrNotComplete
 	}
 

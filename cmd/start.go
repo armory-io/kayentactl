@@ -36,7 +36,7 @@ import (
 
 const (
 	//TODO: This is being hosted in Isaac's personal github account, we'll need to move this somewhere better.
-	defaultCanaryConfig string = "https://gist.githubusercontent.com/imosquera/399a89ad65e4f625fc2e0f0822dc5911/raw/faf0bec17f0ba98189c67a1ddb05cdd965b4358e/canary_config.json"
+	defaultCanaryConfig string = "https://gist.githubusercontent.com/imosquera/399a89ad65e4f625fc2e0f0822dc5911/raw/db77f786c45b45f8bbf3e6be6bc084d75e3eb61e/canary_config.json"
 )
 
 // TODO: get rid of these package global variables. it was easier to port existing code by using them.
