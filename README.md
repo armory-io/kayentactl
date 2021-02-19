@@ -1,54 +1,165 @@
-# kayenta-jenkins-plugin
+# kayentactl
+
+A CLI tool for running canary analysis using [Kayenta]().
+
+## Prerequisites
+
+In order to use `kayentactl` you must have an instance of Kayenta configured and running.
 
 ## Usage
 
+
+### Canary config
+`kayentactl` requires a user-defined canary config to run. This config is what Kayenta uses to determine which metrics
+to consider when evaluating whether a canary is performing properly. When deciding which metrics to measure, you can
+reference this [best practices guid](https://spinnaker.io/guides/user/canary/best-practices/).
+
+By default, `kayentactl` reads the canary config from `canary.json`. Both JSON and YAML formats are supported so if you're
+more comfortable with YAML, feel free to use it! Below is an example canary config that uses Datadog to measure IO, CPU,
+and Memory utilization. 
+
+<details><summary>Example Canary config</summary>
+<p>
+
+```yaml
+executionRequest:
+  lifetimeDurationMins: 10
+  analysisIntervalMins: 1
+  scopes:
+  - controlScope: host:gke-armory-shared-ser-devops-gke-test-96cd73b4-zr3q.c.shared-services-pb.internal
+    controlOffset: 0
+    experimentScope: host:gke-armory-shared-ser-devops-gke-test-96cd73b4-10cz.c.shared-services-pb.internal
+    extendedScopeParams:
+      application: datadog-cn
+    scopeName: default
+    step: 300
+  thresholds:
+    marginal: "0"
+    pass: "99"
+canaryConfig:
+  classifier:
+    groupWeights:
+      MEM: 40
+      CPU: 35
+      IO: 25
+  configVersion: "1"
+  judge:
+    name: NetflixACAJudge-v1.0
+  metrics:
+  - groups:
+    - MEM
+    name: mem-rss
+    query:
+      metricName: max:docker.mem.rss
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - MEM
+    name: mem-in-use
+    query:
+      metricName: max:docker.mem.in_use
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - CPU
+    name: cpu-total
+    query:
+      metricName: avg:docker.cpu.usage
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - CPU
+    name: cpu-sys
+    query:
+      metricName: avg:docker.cpu.system
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - CPU
+    name: cpu-user
+    query:
+      metricName: avg:docker.cpu.user
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - CPU
+    name: cpu-threads
+    query:
+      metricName: max:docker.thread.count
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - IO
+    name: io-bytes-rcvd
+    query:
+      metricName: avg:docker.net.bytes_rcvd
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  - groups:
+    - IO
+    name: io-bytes-sent
+    query:
+      metricName: avg:docker.net.bytes_rcvd
+      serviceType: datadog
+      type: datadog
+    scopeName: default
+  name: democonfig
+```
+
+</p>
+</details>
+
 ### Simple usage with default canary configuration
 ```shell
-$ kayentactl analysis start --scope=kube_deployment:myappname
+kayentactl analysis start --scope=kube_deployment:myappname --canary-config config.yaml
 ```
 
 ### Adding a duration allows you to determine the duration of the experiment 
 ```shell
- kayentactl analysis start --scope=kube_deployment:spud-stories --lifetime-duration=2m
+kayentactl analysis start --scope=kube_deployment:spud-stories --lifetime-duration=2m --canary-config config.yaml
  ```
 
-- [x] make an app that takes traffic and shows a difference
-- [x] configure datadog
-- [x] deploy that through argo
-- [x] create and deploy that generates traffic
-- [x] create new repo for kubernetes infrastructure
-- [x] create automation to replace docker tag in deployment object
-- [x] push kayentactl container to the cloud on CI! (registry)
-- [x] docker container for kayentactl
-- [x] update spud stories application to use command line args (isaac)
-- [x] get canary config to use what we want it to use for the app above.
-- [x] how do we want to communicate failure through the CLI? 
-- [x] exit properly with proper error code
-- [x] show pretty progress 
-- [x] show pretty results
-- [x] set rolling update for slower deploy (isaac)
-- [] create demo using CLI (run end-to-end to tests)
-- [] add CI with github actions
-- [] move kayenta to the kubernetes cluster
+### Accessing an analysis result
 
------------------------------------
-- [] jenkins plugin
-- [] create demo using Jenkins
+If you've started an analysis but opted not to wait for it's completion (using the `--no-wait` flag), you can use the
+analysis ID to get the analysis at your convenience.
 
+```shell
+kayentactl analysis get {ANALYSIS-ID} # add -o json for JSON output instead of the pretty report
+```
 
-## DEMO
-* we would explain the problem
-  * for the customer - Typically what happens after you deploy is that you rush over to datadog dashboards to see if you notice a difference in metrics. But what metrics are important? how do you know if they have deviated enough to present a real problem? Should you continue moving forward or not? 
-  * They want to automate canaries or have a safe deployment
-  * There isn't enough intelligence in the system
-  * if we simplify the barrier to entry to automate deployment verification, will people do it?
-  * is there a way to automate 
-  * we think there is a better way with Kayenta which is just the analysis engine from Spinnaker. It simply compares two datasets and we can use that to help inform a developer, operator or automated process on wether to continue to moving forward to scale out.
-  * We've created a CLI that wraps the Kayenta API so we can invoke from our laptop, CI tool or workflow engine. This will give us the ability to scale up or scale down when we need to.
-  * share the architecture 
-  * describe the app we've created, i'll make a breaking change to spud-stories and watch that get deployed.
-  * So what we've done is wrap 
-  
-* take the thing that was newly deployed compare it over 24hrs
-* wexplain the proposed
+### Help
+
+```
+Usage:
+  kayentactl [command]
+
+Available Commands:
+  analysis    commands for interacting with canary analysis like starting or retrieving an analysis
+  help        Help about any command
+
+Flags:
+  -h, --help                 help for kayentactl
+  -u, --kayenta-url string   kayenta url (default "http://localhost:8090")
+      --no-color             disable output colors
+  -v, --verbosity string     log level (debug, info, warn, error, fatal, panic) (default "info")
+
+Use "kayentactl [command] --help" for more information about a command.
+```
+
+## TODO
+
+- [] Add documentation about how to install/configure Kayenta OR how to access hosted Kayenta.
+- [] Add example/default canary config templates.
+- [] Jenkins Plugin
+- [] Github Action
+- [] Think of more awesome things!
+
 

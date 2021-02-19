@@ -22,7 +22,7 @@ import (
 // analysisCmd represents the analysis command
 var analysisCmd = &cobra.Command{
 	Use:   "analysis",
-	Short: "",
+	Short: "commands for interacting with canary analysis like starting or retrieving an analysis",
 	Long:  ``,
 }
 
