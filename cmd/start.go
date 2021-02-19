@@ -34,11 +34,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	//TODO: This is being hosted in Isaac's personal github account, we'll need to move this somewhere better.
-	defaultCanaryConfig string = "https://gist.githubusercontent.com/imosquera/399a89ad65e4f625fc2e0f0822dc5911/raw/db77f786c45b45f8bbf3e6be6bc084d75e3eb61e/canary_config.json"
-)
-
 // TODO: get rid of these package global variables. it was easier to port existing code by using them.
 var (
 	scope, configLocation, control, experiment, startTimeIso, endTimeIso      string
@@ -117,7 +112,7 @@ var startCmd = &cobra.Command{
 func init() {
 	analysisCmd.AddCommand(startCmd)
 	flags := startCmd.Flags()
-	flags.StringVar(&configLocation, "canary-config", defaultCanaryConfig, "location of canary configuration")
+	flags.StringVar(&configLocation, "canary-config", "canary.json", "location of canary configuration")
 	flags.StringVarP(&scope, "scope", "s", "", "name of the scope to use")
 	flags.StringVarP(&control, "control", "c", "", "application to use as the experiment control (i.e. baseline)")
 	flags.StringVarP(&experiment, "experiment", "e", "", "application to use as the experiment  (i.e. canary)")
