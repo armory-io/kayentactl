@@ -6,13 +6,17 @@ A CLI tool for running canary analysis using [Kayenta]().
 
 In order to use `kayentactl` you must have an instance of Kayenta configured and running.
 
-## Usage
+### Installation
+
+Builds for Linux, OSX and Windows are available on the releases page. 
+
+*Note: The Windows builds are untested and may contain bugs.*
 
 
 ### Canary config
 `kayentactl` requires a user-defined canary config to run. This config is what Kayenta uses to determine which metrics
 to consider when evaluating whether a canary is performing properly. When deciding which metrics to measure, you can
-reference this [best practices guid](https://spinnaker.io/guides/user/canary/best-practices/).
+reference this [best practices guide](https://spinnaker.io/guides/user/canary/best-practices/).
 
 By default, `kayentactl` reads the canary config from `canary.json`. Both JSON and YAML formats are supported so if you're
 more comfortable with YAML, feel free to use it! Below is an example canary config that uses Datadog to measure IO, CPU,
@@ -156,10 +160,10 @@ Use "kayentactl [command] --help" for more information about a command.
 
 ## TODO
 
-- [] Add documentation about how to install/configure Kayenta OR how to access hosted Kayenta.
-- [] Add example/default canary config templates.
-- [] Jenkins Plugin
-- [] Github Action
-- [] Think of more awesome things!
+- [ ] Add documentation about how to install/configure Kayenta OR how to access hosted Kayenta.
+- [ ] Add example/default canary config templates.
+- [ ] Jenkins Plugin
+- [ ] Github Action
+- [ ] Think of more awesome things!
 
 
