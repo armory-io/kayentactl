@@ -91,7 +91,7 @@ func resultToAsciiReportData(result kayenta.GetStandaloneCanaryAnalysisOutput) (
 		execStatus = color.YellowString(result.ExecutionStatus)
 	}
 	reportData.FinalScore = scoreStr
-	reportData.Measurements = finalMsg
+	reportData.Message = finalMsg
 
 	if result.ExecutionStatus == "TERMINAL" {
 		execStatus = color.RedString(result.ExecutionStatus)
