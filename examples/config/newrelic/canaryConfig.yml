@@ -1,0 +1,32 @@
+name: test-canary-config
+description: An sample canary configuration for use with New Relic
+configVersion: "1"
+applications:
+  - ad-hoc
+judge:
+  name: NetflixACAJudge-v1.0
+  judgeConfigurations: {}
+metrics:
+  - name: Server error count
+    query:
+      type: newrelic
+      q: "status >= '500'"
+      select: SELECT count(http_server_requests) FROM Metric
+      serviceType: newrelic
+    groups:
+      - Errors
+    analysisConfigurations:
+      canary:
+        critical: false
+        nanStrategy: remove
+        effectSize:
+          allowedIncrease: 1
+          allowedDecrease: 1
+        outliers:
+          strategy: keep
+        direction: either
+    scopeName: default
+templates: {}
+classifier:
+  groupWeights:
+    Errors: 100

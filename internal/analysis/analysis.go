@@ -2,6 +2,8 @@ package analysis
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/armory-io/kayentactl/pkg/kayenta"
@@ -19,6 +21,76 @@ func UpdateScopes(scopes []kayenta.Scope, scope, startTimeIso, endTimeIso string
 		updatedScopes = append(updatedScopes, s)
 	}
 	return updatedScopes
+}
+
+type scopeCoordinates struct {
+	scope, location string
+}
+
+func coordinates(scope string) (*scopeCoordinates, error) {
+	splitScope := strings.Split(scope, "/")
+	if len(splitScope) == 0 {
+		return nil, fmt.Errorf("scope could not be determined")
+	}
+
+	if len(splitScope) == 1 {
+		return &scopeCoordinates{scope: splitScope[0], location: ""}, nil
+	}
+
+	return &scopeCoordinates{
+		scope:    splitScope[1],
+		location: splitScope[0],
+	}, nil
+}
+
+type ExecutionRequestContext struct {
+	ControlScope, ExperimentScope string
+	StartTimeIso, EndTimeIso      string
+
+	ControlOffset                              time.Duration
+	AnalysisIntervalMins, LifetimeDurationMins time.Duration
+
+	Thresholds kayenta.Threshold
+}
+
+func BuildExecutionRequest(ctx ExecutionRequestContext) (*kayenta.ExecutionRequest, error) {
+	scope, err := BuildScope(ctx.ControlScope, ctx.ExperimentScope)
+	if err != nil {
+		return nil, fmt.Errorf("could not construct execution request: %w", err)
+	}
+
+	scope.StartTimeIso = ctx.StartTimeIso
+	scope.EndTimeIso = ctx.EndTimeIso
+	scope.ControlOffsetInMinutes = int(ctx.ControlOffset.Minutes())
+	request := kayenta.ExecutionRequest{
+		Scopes:               []kayenta.Scope{*scope},
+		AnalysisIntervalMins: int(ctx.AnalysisIntervalMins.Minutes()),
+		LifetimeDurationMins: int(ctx.LifetimeDurationMins.Minutes()),
+		Thresholds:           ctx.Thresholds,
+	}
+	return &request, nil
+}
+
+func BuildScope(control, experiment string) (*kayenta.Scope, error) {
+	scope := kayenta.Scope{ScopeName: "default"}
+	{
+		coord, err := coordinates(control)
+		if err != nil {
+			return nil, fmt.Errorf("could not build scope for control: %w", err)
+		}
+		scope.ControlScope = coord.scope
+		scope.ControlLocation = coord.location
+	}
+	{
+		coord, err := coordinates(experiment)
+		if err != nil {
+			return nil, fmt.Errorf("could not build scope for experiment: %w", err)
+		}
+		scope.ExperimentScope = coord.scope
+		scope.ExperimentLocation = coord.location
+	}
+
+	return &scope, nil
 }
 
 type ProgressFunc func(res kayenta.GetStandaloneCanaryAnalysisOutput)

@@ -26,32 +26,17 @@ and Memory utilization.
 <p>
 
 ```yaml
-executionRequest:
-  lifetimeDurationMins: 10
-  analysisIntervalMins: 1
-  scopes:
-  - controlScope: host:gke-armory-shared-ser-devops-gke-test-96cd73b4-zr3q.c.shared-services-pb.internal
-    controlOffset: 0
-    experimentScope: host:gke-armory-shared-ser-devops-gke-test-96cd73b4-10cz.c.shared-services-pb.internal
-    extendedScopeParams:
-      application: datadog-cn
-    scopeName: default
-    step: 300
-  thresholds:
-    marginal: "0"
-    pass: "99"
-canaryConfig:
-  classifier:
-    groupWeights:
-      MEM: 40
-      CPU: 35
-      IO: 25
-  configVersion: "1"
-  judge:
-    name: NetflixACAJudge-v1.0
-  metrics:
+classifier:
+  groupWeights:
+    MEM: 40
+    CPU: 35
+    IO: 25
+configVersion: "1"
+judge:
+  name: NetflixACAJudge-v1.0
+metrics:
   - groups:
-    - MEM
+      - MEM
     name: mem-rss
     query:
       metricName: max:docker.mem.rss
@@ -59,7 +44,7 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - MEM
+      - MEM
     name: mem-in-use
     query:
       metricName: max:docker.mem.in_use
@@ -67,7 +52,7 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - CPU
+      - CPU
     name: cpu-total
     query:
       metricName: avg:docker.cpu.usage
@@ -75,7 +60,7 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - CPU
+      - CPU
     name: cpu-sys
     query:
       metricName: avg:docker.cpu.system
@@ -83,7 +68,7 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - CPU
+      - CPU
     name: cpu-user
     query:
       metricName: avg:docker.cpu.user
@@ -91,7 +76,7 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - CPU
+      - CPU
     name: cpu-threads
     query:
       metricName: max:docker.thread.count
@@ -99,7 +84,7 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - IO
+      - IO
     name: io-bytes-rcvd
     query:
       metricName: avg:docker.net.bytes_rcvd
@@ -107,18 +92,29 @@ canaryConfig:
       type: datadog
     scopeName: default
   - groups:
-    - IO
+      - IO
     name: io-bytes-sent
     query:
       metricName: avg:docker.net.bytes_rcvd
       serviceType: datadog
       type: datadog
     scopeName: default
-  name: democonfig
+name: democonfig
+
 ```
 
 </p>
 </details>
+
+### Perform a retrospective analysis over a specific time period (typically in the past)
+_Note: the `scope` below represents a namespace and deployment name, separated by a `/`._
+```shell
+kayentactl analysis start --scope=production/webserver \
+  --start-time-iso 2021-02-24T15:00:00Z \
+  --end-time-iso 2021-02-25T15:00:00Z \
+  --canary-config config.yml \
+  --thresholds marginal=50,pass=90
+```
 
 ### Simple usage with default canary configuration
 ```shell

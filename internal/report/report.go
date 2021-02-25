@@ -57,19 +57,32 @@ type asciiReportData struct {
 func resultToAsciiReportData(result kayenta.GetStandaloneCanaryAnalysisOutput) (asciiReportData, error) {
 	scores := result.CanaryAnalysisExecutionResult.CanaryScores
 	canaryResults := result.CanaryAnalysisExecutionResult.CanaryExecutionResults
-	lastResult := canaryResults[len(canaryResults)-1]
+	hasResults := len(canaryResults) > 0
 
-	resultsTable, err := tableFromJudgeResult(lastResult.Result.JudgeResult)
-	if err != nil {
-		return asciiReportData{}, err
+	reportData := asciiReportData{
+		ID:          color.GreenString(result.PipelineID),
+		HasWarnings: result.CanaryAnalysisExecutionResult.HasWarnings,
 	}
-	measurementsTables, err := tableFromMeasurements(lastResult.Result.JudgeResult)
-	if err != nil {
-		return asciiReportData{}, err
+
+	if hasResults {
+		lastResult := canaryResults[len(canaryResults)-1]
+		resultsTable, err := tableFromJudgeResult(lastResult.Result.JudgeResult)
+		if err != nil {
+			return asciiReportData{}, err
+		}
+		measurementsTables, err := tableFromMeasurements(lastResult.Result.JudgeResult)
+		if err != nil {
+			return asciiReportData{}, err
+		}
+		reportData.Results = resultsTable
+		reportData.Measurements = measurementsTables
 	}
 
 	execStatus := color.GreenString(result.ExecutionStatus)
-	score := strconv.Itoa(int(scores[len(scores)-1]))
+	score := "0"
+	if len(scores) > 0 {
+		score = strconv.Itoa(int(scores[len(scores)-1]))
+	}
 	scoreStr := color.GreenString(score)
 	finalMsg := color.GreenString(result.CanaryAnalysisExecutionResult.CanaryScoreMessage)
 	if !result.CanaryAnalysisExecutionResult.DidPassThresholds {
@@ -77,19 +90,15 @@ func resultToAsciiReportData(result kayenta.GetStandaloneCanaryAnalysisOutput) (
 		finalMsg = color.RedString(result.CanaryAnalysisExecutionResult.CanaryScoreMessage)
 		execStatus = color.YellowString(result.ExecutionStatus)
 	}
+	reportData.FinalScore = scoreStr
+	reportData.Measurements = finalMsg
 
 	if result.ExecutionStatus == "TERMINAL" {
 		execStatus = color.RedString(result.ExecutionStatus)
 	}
-	return asciiReportData{
-		ID:           color.GreenString(result.PipelineID),
-		Status:       execStatus,
-		FinalScore:   scoreStr,
-		Message:      finalMsg,
-		HasWarnings:  result.CanaryAnalysisExecutionResult.HasWarnings,
-		Results:      resultsTable,
-		Measurements: measurementsTables,
-	}, nil
+
+	reportData.Status = execStatus
+	return reportData, nil
 }
 
 func tableFromJudgeResult(result kayenta.JudgeResult) (string, error) {

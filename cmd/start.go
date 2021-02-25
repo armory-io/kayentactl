@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/armory-io/kayentactl/internal/canaryConfig"
@@ -36,10 +37,36 @@ import (
 
 // TODO: get rid of these package global variables. it was easier to port existing code by using them.
 var (
-	scope, configLocation, control, experiment, startTimeIso, endTimeIso      string
-	controlOffset, lifetimeDuration, analysisInterval, checkInterval, timeout time.Duration
-	noWait                                                                    bool
+	scope, configLocation, control, experiment, startTimeIso, endTimeIso, thresholds, metricsAccount, storageAccount string
+	controlOffset, lifetimeDuration, analysisInterval, checkInterval, timeout                                        time.Duration
+	noWait                                                                                                           bool
 )
+
+// processThresholds takes a string in the format of marginal=?,pass=? and creates
+// a kayenta.Threshold using the values. if the string is malformed or cannot be
+// processed, the defaults are used
+func processThresholds(t string, defaultMarginal, defaultPass string) kayenta.Threshold {
+	parts := strings.Split(t, ",")
+	m := map[string]string{}
+	for _, part := range parts {
+		s := strings.Split(part, "=")
+		if len(s) == 2 {
+			m[s[0]] = s[1]
+		}
+	}
+
+	marginal := defaultMarginal
+	if v, ok := m["marginal"]; ok && v != "" {
+		marginal = v
+	}
+
+	pass := defaultPass
+	if v, ok := m["pass"]; ok && v != "" {
+		pass = v
+	}
+	return kayenta.Threshold{Marginal: marginal, Pass: pass}
+
+}
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -53,18 +80,41 @@ var startCmd = &cobra.Command{
 		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
 
 		log.Debugf("Fetching canary config from: %s", color.BlueString(configLocation))
-		input, err := canaryConfig.GetCanaryConfig(configLocation)
+		canaryConfig, err := canaryConfig.GetCanaryConfig(configLocation)
 		if err != nil {
 			log.Fatalf("failed to fetch and parse canary config: %s", err.Error())
 		}
 
-		input.ExecutionRequest.AnalysisIntervalMins = int(analysisInterval.Minutes())
-		input.ExecutionRequest.Scopes = analysis.UpdateScopes(input.ExecutionRequest.Scopes, scope, startTimeIso, endTimeIso, controlOffset)
-		input.ExecutionRequest.LifetimeDurationMins = int(lifetimeDuration.Minutes())
+		// if the control and experiment are the same, users
+		// can provide a single scope option for both
+		if (control == "" && experiment == "") && scope != "" {
+			control, experiment = scope, scope
+		}
+		executionRequest, err := analysis.BuildExecutionRequest(analysis.ExecutionRequestContext{
+			ControlScope:         control,
+			ExperimentScope:      experiment,
+			StartTimeIso:         startTimeIso,
+			EndTimeIso:           endTimeIso,
+			ControlOffset:        controlOffset,
+			AnalysisIntervalMins: analysisInterval,
+			LifetimeDurationMins: lifetimeDuration,
+			Thresholds:           processThresholds(thresholds, "50", "90"),
+		})
+
+		if err != nil {
+			log.Fatalf("unable to create execution request: %s", err.Error())
+		}
+
+		input := kayenta.StandaloneCanaryAnalysisInput{
+			ExecutionRequest:   *executionRequest,
+			CanaryConfig:       *canaryConfig,
+			MetricsAccountName: metricsAccount,
+			StorageAccountName: storageAccount,
+		}
 
 		// start standalone canary
 		log.Debugf("Analysis Execution starting with kayenta host: %v", color.BlueString(kayentaURL))
-		output, err := kc.StartStandaloneCanaryAnalysis(*input)
+		output, err := kc.StartStandaloneCanaryAnalysis(input)
 		if err != nil {
 			log.Fatalf("error starting canary analysis: %s", err.Error())
 		}
@@ -118,6 +168,10 @@ func init() {
 	flags.StringVarP(&experiment, "experiment", "e", "", "application to use as the experiment  (i.e. canary)")
 	flags.StringVar(&startTimeIso, "start-time-iso", "", "start time for the analysis in ISO format. Ex: 2020-12-20T14:49:31.647Z")
 	flags.StringVar(&endTimeIso, "end-time-iso", "", "end time for the analysis in ISO format. Ex: 2020-12-20T15:49:31.647Z")
+	flags.StringVar(&thresholds, "thresholds", "marginal=50,pass=90", "comma-delimeted threshold levels")
+
+	flags.StringVar(&metricsAccount, "metrics-account", "", "metrics account name")
+	flags.StringVar(&storageAccount, "storage-account", "", "storage account name")
 
 	flags.DurationVar(&analysisInterval, "analysis-interval", 1*time.Minute, "Minutes between each analysis. Default is once per minute")
 	flags.DurationVar(&lifetimeDuration, "lifetime-duration", time.Minute*5, "Total duration time for the analysis")

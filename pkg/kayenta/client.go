@@ -48,7 +48,11 @@ type Metric struct {
 	Name      string            `json:"name"`
 	Query     map[string]string `json:"query"`
 	ScopeName string            `json:"scopeName"`
+
+	AnalysisConfigurations AnalysisConfiguration `json:"analysisConfigurations"`
 }
+
+type AnalysisConfiguration map[string]interface{}
 
 type CanaryClassifier struct {
 	GroupWeights map[string]int `json:"groupWeights"`
