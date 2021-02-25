@@ -13,6 +13,7 @@ import (
 const (
 	canaryConfigEndpoint             = "/canaryConfig"
 	standaloneCanaryAnalysisEndpoint = "/standalone_canary_analysis"
+	credentialsEndpoint              = "/credentials"
 )
 
 //StandaloneCanaryAnalysisInput is used to create an api request to kayenta for a standalone analysis
@@ -169,9 +170,20 @@ type StandaloneCanaryAnalysisAPI interface {
 	GetStandaloneCanaryAnalysis(id string) (GetStandaloneCanaryAnalysisOutput, error)
 }
 
+type CredentialsAPI interface {
+	GetCredentials() []AccountCredential
+}
+
+type AccountCredential struct {
+	Name           string   `json:"name"`
+	SupportedTypes []string `json:"supportedTypes"`
+	Type           string   `json:"type"`
+}
+
 type Client interface {
 	StandaloneCanaryAnalysisAPI
 	CanaryConfigAPI
+	CredentialsAPI
 }
 
 // HTTPClientFactory returns an http.Client that
@@ -359,6 +371,24 @@ func (d *DefaultClient) GetCanaryConfigs(application string) ([]CanaryConfig, er
 		return nil, err
 	}
 	var output []CanaryConfig
+	if err := deserializeResponse(resp, &output); err != nil {
+		return nil, err
+	}
+	return output, nil
+
+}
+
+func (d *DefaultClient) GetCredentials() ([]AccountCredential, error) {
+	req, err := http.NewRequest(
+		http.MethodGet, d.getEndpoint(credentialsEndpoint, nil), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := d.ClientFactory().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	var output []AccountCredential
 	if err := deserializeResponse(resp, &output); err != nil {
 		return nil, err
 	}
