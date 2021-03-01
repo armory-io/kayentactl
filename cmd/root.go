@@ -18,6 +18,12 @@ package cmd
 import (
 	"os"
 
+	"github.com/armory-io/kayentactl/internal/options"
+
+	"github.com/armory-io/kayentactl/cmd/accounts"
+
+	"github.com/armory-io/kayentactl/cmd/analysis"
+
 	"github.com/armory-io/kayentactl/internal/logger"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -68,16 +74,13 @@ func Execute() {
 	}
 }
 
-func RootCmd() *cobra.Command {
-	return rootCmd
-}
-
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVarP(&kayentaURL, "kayenta-url", "u", "http://localhost:8090", "kayenta url")
-	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", log.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic)")
-	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable output colors")
+	analysis.Configure(rootCmd)
+	accounts.Configure(rootCmd)
+	rootCmd.AddCommand()
+	// global options are added by an external pacakge so that they can be
+	// managed from a single source and used across all sub-commands. this
+	// ensures that the logic for getting then stays consistent
+	options.ConfigureGlobals(rootCmd)
 
 }

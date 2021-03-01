@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package analysis
 
 import (
 	"context"
@@ -21,6 +21,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/armory-io/kayentactl/internal/options"
 
 	"github.com/armory-io/kayentactl/internal/canaryConfig"
 
@@ -74,10 +76,12 @@ var startCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		if !noColor {
+		globals, _ := options.Globals(cmd)
+
+		if !globals.NoColor {
 			fmt.Printf("%v\n", color.HiMagentaString(report.AsciiKayenta))
 		}
-		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
+		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(globals.KayentaURL))
 
 		log.Debugf("Fetching canary config from: %s", color.BlueString(configLocation))
 		canaryConfig, err := canaryConfig.GetCanaryConfig(configLocation)
@@ -113,7 +117,7 @@ var startCmd = &cobra.Command{
 		}
 
 		// start standalone canary
-		log.Debugf("Analysis Execution starting with kayenta host: %v", color.BlueString(kayentaURL))
+		log.Debugf("Analysis Execution starting with kayenta host: %v", color.BlueString(globals.KayentaURL))
 		output, err := kc.StartStandaloneCanaryAnalysis(input)
 		if err != nil {
 			log.Fatalf("error starting canary analysis: %s", err.Error())

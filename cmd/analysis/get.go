@@ -13,10 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package analysis
 
 import (
 	"os"
+
+	"github.com/armory-io/kayentactl/internal/options"
 
 	"github.com/armory-io/kayentactl/internal/report"
 
@@ -33,7 +35,9 @@ var getCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(kayentaURL))
+		globals, _ := options.Globals(cmd)
+
+		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(globals.KayentaURL))
 		executionID := args[0]
 		if executionID == "" {
 			log.Fatal("execution id is required")
