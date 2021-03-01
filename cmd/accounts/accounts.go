@@ -13,19 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package accounts
 
 import (
 	"github.com/spf13/cobra"
 )
 
 // analysisCmd represents the analysis command
-var analysisCmd = &cobra.Command{
-	Use:   "analysis",
-	Short: "commands for interacting with canary analysis like starting or retrieving an analysis",
+var accountsCmd = &cobra.Command{
+	Use:   "accounts",
+	Short: "commands for interacting with the accounts API",
 	Long:  ``,
 }
 
-func init() {
-	rootCmd.AddCommand(analysisCmd)
+func Configure(cmd *cobra.Command) {
+	cmd.AddCommand(accountsCmd)
 }
