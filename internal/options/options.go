@@ -18,7 +18,7 @@ type GlobalOptions struct {
 }
 
 func Globals(cmd *cobra.Command) (*GlobalOptions, error) {
-	flags := cmd.PersistentFlags()
+	flags := cmd.Root().PersistentFlags()
 
 	kayentaURL, _ := flags.GetString("kayenta-url")
 	verbosity, _ := flags.GetString("verbosity")

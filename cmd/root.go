@@ -41,7 +41,8 @@ var rootCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if err := initLogs(verbosity); err != nil {
+		globals, _ := options.Globals(cmd)
+		if err := initLogs(globals.Verbosity); err != nil {
 			return err
 		}
 		return nil
@@ -77,7 +78,6 @@ func Execute() {
 func init() {
 	analysis.Configure(rootCmd)
 	accounts.Configure(rootCmd)
-	rootCmd.AddCommand()
 	// global options are added by an external pacakge so that they can be
 	// managed from a single source and used across all sub-commands. this
 	// ensures that the logic for getting then stays consistent

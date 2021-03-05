@@ -35,7 +35,7 @@ var getCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		globals, _ := options.Globals(cmd)
+		globals, _ := options.Globals(cmd.Root())
 
 		kc := kayenta.NewDefaultClient(kayenta.ClientBaseURL(globals.KayentaURL))
 		executionID := args[0]
