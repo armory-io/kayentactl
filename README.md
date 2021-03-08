@@ -2,13 +2,17 @@
 
 A CLI tool for running canary analysis using [Kayenta]().
 
+## Disclaimer
+
+`kayentactl` is under active development and not recommended for production use. If you encounter any bugs, feel free to file an issue or pull request!
+
 ## Prerequisites
 
 In order to use `kayentactl` you must have an instance of Kayenta configured and running.
 
 ### Installation
 
-Builds for Linux, OSX and Windows are available on the releases page. 
+Builds for Linux, OSX and Windows are available on the [releases page](https://github.com/armory-io/kayentactl/releases). 
 
 *Note: The Windows builds are untested and may contain bugs.*
 
@@ -161,5 +165,3 @@ Use "kayentactl [command] --help" for more information about a command.
 - [ ] Jenkins Plugin
 - [ ] Github Action
 - [ ] Think of more awesome things!
-
-
