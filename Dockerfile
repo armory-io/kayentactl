@@ -1,4 +1,4 @@
-FROM golang:1.14.2 AS builder
+FROM golang:1.16.2 AS builder
 
 COPY . .
 RUN GOPATH= CGO_ENABLED=0 go build -o /bin/kayentactl
