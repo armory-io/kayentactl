@@ -1,0 +1,6 @@
+.dockerignore
+examples
+.git
+.github
+.gitignore
+.goreleaser.yml
