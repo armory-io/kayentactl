@@ -23,6 +23,7 @@ import (
 	"github.com/armory-io/kayentactl/cmd/accounts"
 
 	"github.com/armory-io/kayentactl/cmd/analysis"
+	"github.com/armory-io/kayentactl/cmd/version"
 
 	"github.com/armory-io/kayentactl/internal/logger"
 	log "github.com/sirupsen/logrus"
@@ -78,9 +79,9 @@ func Execute() {
 func init() {
 	analysis.Configure(rootCmd)
 	accounts.Configure(rootCmd)
+	version.Configure(rootCmd)
 	// global options are added by an external pacakge so that they can be
 	// managed from a single source and used across all sub-commands. this
 	// ensures that the logic for getting then stays consistent
 	options.ConfigureGlobals(rootCmd)
-
 }

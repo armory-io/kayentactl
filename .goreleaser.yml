@@ -7,6 +7,8 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/armory-io/kayentactl/internal/version.Version={{.Version}} -X github.com/armory-io/kayentactl/internal/version.Commit={{.Commit}} -X github.com/armory-io/kayentactl/internal/version.Date={{.Date}}
     goos:
       - linux
       - windows
