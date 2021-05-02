@@ -26,7 +26,7 @@ var versionCmd = &cobra.Command{
 	Short: "Prints kayentactl version",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Printf("kayentactl has version %s built from %s on %s\n", version.Version, version.Commit, version.Date)
+		cmd.Printf("kayentactl version %s, build %s, date %s", version.Version, version.Commit, version.Date)
 	},
 }
 
